@@ -5,7 +5,7 @@
 ################################################
 IMAGE := kernel.elf
 
-CROSS_COMPILE = aarch64-linux-gnu-
+CROSS_COMPILE = aarch64-elf-
 
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
@@ -46,7 +46,7 @@ clean:
 
 qemu = qemu-system-aarch64
 qgdb_host 	= 127.0.0.1
-qgdb_port 	= 2345
+qgdb_port 	= 1234
 gdb	= $(CROSS_COMPILE)gdb
 
 qemu_cmd_args = \
@@ -61,17 +61,21 @@ qemu_cmd_args = \
 run: $(IMAGE)
 	$(qemu) $(qemu_cmd_args)
 
-gdb_srv:
+gdb_srv:$(IMAGE)
 	$(qemu) \
 	-gdb tcp::$(qgdb_port) -S \
 	$(qemu_cmd_args)
 
-gdb_cli:
-	cgdb -d$(gdb) -- -q \
+gdb_cli:$(IMAGE)
+	$(gdb) \
 		-ex="target remote $(qgdb_host):$(qgdb_port)" \
 		-ex="symbol-file kernel.elf" \
 		-ex="handle SIGUSR1 stop print nopass"
 
+dts:
+	$(qemu) -M virt,dumpdtb=virt.dtb -cpu cortex-a57 -nographic
+	dtc -I dtb -O dts virt.dtb > etc/virt.dts
+	rm -f virt.dtb
 
 
 .PHONY: run gdb_srv gdb_cli
