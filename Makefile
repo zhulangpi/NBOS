@@ -70,7 +70,9 @@ gdb_cli:$(IMAGE)
 	$(gdb) \
 		-ex="target remote $(qgdb_host):$(qgdb_port)" \
 		-ex="symbol-file kernel.elf" \
-		-ex="handle SIGUSR1 stop print nopass"
+		-ex="handle SIGUSR1 stop print nopass" \
+		-ex="layout regs" \
+		-ex="set disassemble-next-line on"
 
 dts:
 	$(qemu) -M virt,dumpdtb=virt.dtb -cpu cortex-a57 -nographic
