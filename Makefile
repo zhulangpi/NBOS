@@ -18,7 +18,7 @@ CFLAGS = -Wall -fno-common -O0 -g \
 
 AFLAGS = -g
 
-OBJS =  start.o main.o
+OBJS =  start.o main.o task.o
 
 all: $(IMAGE)
 
@@ -32,7 +32,7 @@ $(IMAGE): kernel.ld $(OBJS)
 	$(AS) $(AFLAGS) $< -o $@
 
 %.o : %.c %.h 
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -c -o $@
 
 clean:
 	rm -f $(IMAGE) *.o *.list *.sym *.bin

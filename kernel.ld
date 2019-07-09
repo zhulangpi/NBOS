@@ -1,6 +1,5 @@
 /* With QEMU this is not needed */
 /* ENTRY(_Reset) */
-
 SECTIONS
 {
 /*
@@ -21,6 +20,10 @@ SECTIONS
     }
 
 	.bss : { *(.bss COMMON) }
+
+    . = ALIGN(4096); /* 4KB align */
+
+    .stacks : { *(.stacks) }
 
     . = ALIGN(8);
 
