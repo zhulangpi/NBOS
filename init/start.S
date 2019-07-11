@@ -1,19 +1,15 @@
-#include "reg.h"
+#include "../include/reg.h"
 
 /* creates section containing executable code */
-    .section    INTERRUPT_VECTOR, "x"
+    .section INTERRUPT_VECTOR, "x"
 /* exporting the name to the linker */
     .global _Reset
     .align  4
 _Reset:
     B   ResetHandler /* Reset */
-    B   . /* Undefined */
-    B   . /* SWI */
-    B   . /* Prefetch Abort */
-    B   . /* Data Abort */
-    B   . /* reserved */
-    B   . /* IRQ */
-    B   . /* FIQ */
+
+
+
 
     .text
 ResetHandler:
@@ -23,11 +19,11 @@ ResetHandler:
 
     .globl	_start
 _start:
-	/* configure stack */
-	adrp    x0, stack_top
+	/* configure init stack */
+	adrp    x0, __init_stack_top
 	mov     sp, x0
 
-	b main
+	b       init_main
 
 
 /* 

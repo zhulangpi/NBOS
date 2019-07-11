@@ -3,7 +3,7 @@
 # compile
 
 ################################################
-IMAGE := kernel.elf
+IMAGE := NBOS.elf
 
 CROSS_COMPILE = aarch64-elf-
 
@@ -18,15 +18,23 @@ CFLAGS = -Wall -fno-common -O0 -g \
 
 AFLAGS = -g
 
-OBJS =  start.o main.o task.o
+INIT = init/start.o init/init_task.o
+KERNEL = kernel/task.o
+MM = mm/mm.o
+
+
+
+OBJS =  $(INIT) $(KERNEL)
+
+LDS = etc/NBOS.ld
 
 all: $(IMAGE)
 
-$(IMAGE): kernel.ld $(OBJS)
-	$(LD) $(OBJS) -T kernel.ld -o $(IMAGE)
-	$(OBJDUMP) -d kernel.elf > kernel.list
-	$(OBJDUMP) -t kernel.elf | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
-	$(OBJCOPY) -O binary -S kernel.elf kernel.bin
+$(IMAGE): $(LDS) $(OBJS)
+	$(LD) $(OBJS) -T$(LDS) -o $(IMAGE)
+	$(OBJDUMP) -d NBOS.elf > NBOS.list
+	$(OBJDUMP) -t NBOS.elf | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > NBOS.sym
+	$(OBJCOPY) -O binary -S NBOS.elf NBOS.bin
 
 %.o : %.S %.h 
 	$(AS) $(AFLAGS) $< -o $@
@@ -49,13 +57,18 @@ qgdb_host 	= 127.0.0.1
 qgdb_port 	= 1234
 gdb	= $(CROSS_COMPILE)gdb
 
+cpu_config = \
+        -cpu cortex-a57 \
+        -smp 1 \
+        -m 1G
+ 
+
 qemu_cmd_args = \
         -machine virt \
-        -cpu cortex-a57 \
-        -smp 1 -m 4096M \
+        $(cpu_config) \
         -nographic \
         -serial mon:stdio \
-        -kernel kernel.elf
+        -kernel NBOS.elf
 
 
 run: $(IMAGE)
@@ -75,7 +88,7 @@ gdb_cli:$(IMAGE)
 		-ex="set disassemble-next-line on"
 
 dts:
-	$(qemu) -M virt,dumpdtb=virt.dtb -cpu cortex-a57 -nographic
+	$(qemu) -M virt,dumpdtb=virt.dtb $(cpu_config) -nographic
 	dtc -I dtb -O dts virt.dtb > etc/virt.dts
 	rm -f virt.dtb
 
