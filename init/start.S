@@ -1,29 +1,106 @@
-#include "../include/reg.h"
-
-/* creates section containing executable code */
-    .section INTERRUPT_VECTOR, "x"
-/* exporting the name to the linker */
-    .global _Reset
-    .align  4
-_Reset:
-    B   ResetHandler /* Reset */
-
-
-
+#include "reg.h"
 
     .text
-ResetHandler:
-    /* branch and save the return address in link register */
-    bl  _start
-    b .
-
-    .globl	_start
+/* creates section containing entry code */
+    .section CODE_ENTRY, "x"
+/* exporting the name to the linker */
+    .globl  _start
+    .align  4
 _start:
-	/* configure init stack */
-	adrp    x0, __init_stack_top
-	mov     sp, x0
+    //Initialize VBAR_EL1
+    ldr x0, =vector_table_el1
+    msr vbar_el1,   x0
 
-	b       init_main
+    /* configure init stack */
+    adrp    x0, __init_stack_top
+    mov     sp, x0
+
+    b       init_main
+
+// Typical exception vector table code.
+    .balign 0x800
+    vector_table_el1:
+    curr_el_sp0_sync:   // The exception handler for the synchronous exception from the current EL using SP0.
+    mov x0, #0
+    b   put_exception
+
+    .balign 0x80
+    curr_el_sp0_irq:    // The exception handler for the IRQ exception from the current EL using SP0.
+    mov x0, #1
+    b   put_exception
+
+    .balign 0x80
+    curr_el_sp0_fiq:    // The exception handler for the FIQ exception from the current EL using SP0.
+    mov x0, #2
+    b   put_exception
+
+    .balign 0x80
+    curr_el_sp0_serror: // The exception handler for the system error exception from the current EL using SP0.
+    mov x0, #3
+    b   put_exception
+
+    .balign 0x80
+    curr_el_spx_sync:   // The exception handler for the synchronous exception from the current EL using the current SP.
+    mov x0, #4
+    b   put_exception
+
+    .balign 0x80
+    curr_el_spx_irq:    // The exception handler for IRQ exception from the current EL using the current SP.
+    mov x0, #5
+    b   put_exception
+
+    .balign 0x80
+    curr_el_spx_fiq:    // The exception handler for the FIQ exception from the current EL using the current SP.
+    mov x0, #6
+    b   put_exception
+
+    .balign 0x80
+    curr_el_spx_serror: // The exception handler for the system error exception from the current EL using the current SP.
+    mov x0, #7
+    b   put_exception
+
+    .balign 0x80
+    lower_el_aarch64_sync:  // The exception handler for the synchronous exception from a lower EL (AArch64).
+    mov x0, #8
+    b   put_exception
+
+    .balign 0x80
+    lower_el_aarch64_irq:   // The exception handler for the IRQ exception from a lower EL (AArch64).
+    mov x0, #9
+    b   put_exception
+
+    .balign 0x80
+    lower_el_aarch64_fiq:       // The exception handler for the FIQ exception from a lower EL (AArch64).
+    mov x0, #10
+    b   put_exception
+
+    .balign 0x80
+    lower_el_aarch64_serror:    // The exception handler for the system error exception from a lower EL(AArch64).
+    mov x0, #11
+    b   put_exception
+
+    .balign 0x80
+    lower_el_aarch32_sync:      // The exception handler for the synchronous exception from a lower EL(AArch32).
+    mov x0, #12
+    b   put_exception
+
+    .balign 0x80
+    lower_el_aarch32_irq:       // The exception handler for the IRQ exception from a lower EL (AArch32).
+    mov x0, #13
+    b   put_exception
+
+    .balign 0x80
+    lower_el_aarch32_fiq:       // The exception handler for the FIQ exception from a lower EL (AArch32).
+    mov x0, #14
+    b   put_exception
+
+    .balign 0x80
+    lower_el_aarch32_serror:    // The exception handler for the system error exception from a lower EL(AArch32)
+    mov x0, #15
+    b   put_exception
+
+
+
 
 
 /* 

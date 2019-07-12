@@ -9,6 +9,9 @@ void __switch_to(struct task_struct *next)
 
     prev = current;
 
+    if(prev==next)
+        return ;
+
     cpu_switch_to(prev,next);
 
 }

@@ -1,16 +1,12 @@
-/* With QEMU this is not needed */
-/* ENTRY(_Reset) */
+
+ENTRY(_start)
 SECTIONS
 {
-/*
-* QEMU bootloader will put it on 0x40080000 anyway, this is needed for
-* sections laying down, not loading
-*/
     __ram_addr_min = .;
 	. = 0x40000000;
 /*    .start : { start.o(.text)  }  */
 	.text : { 
-        init/start.o  (INTERRUPT_VECTOR)
+        init/start.o  (CODE_ENTRY)
         *(.text) 
     }
     
@@ -36,8 +32,6 @@ SECTIONS
 
     . = ALIGN(4096);    /* 按页对齐，后面的全部作为堆管理 */
     __heap_start = .;
-
-
 
     . = 0x80000000;
     __heap_end = .;

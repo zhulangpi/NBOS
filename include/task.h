@@ -54,6 +54,23 @@ static __always_inline struct task_struct *get_current(void)
 
 #define current get_current()
 
+
+#define CREATE_TASK(name, func) \
+    struct task_stack stack_##name __attribute__((section(".stacks"))); \
+    struct task_struct name = { \
+    .cpu_context = { \
+        .sp = (unsigned long)&stack_##name.stack[STACK_SZ-1], \
+        .pc = (unsigned long)func, \
+    }, \
+    .task = func, \
+    .next = NULL, \
+}; \
+struct task_stack stack_##name = { \
+    .task_struct = &name, \
+};
+
+
+
 /* Thread switching */
 extern void __switch_to(struct task_struct *next);
 

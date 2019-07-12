@@ -1,12 +1,9 @@
-#include "../include/reg.h"
-#include "../kernel/task.h"
+#include "reg.h"
+#include "task.h"
+#include "mm.h"
+#include "lib.h"
 
-
-void task0_main(unsigned long para);
-void task1_main(unsigned long para);
-void init_main(unsigned long para);
-
-
+void init_main(unsigned long);
 
 struct task_stack init_stack __attribute__((section(".data.init_stack")));
 struct task_struct init_task = {
@@ -24,56 +21,32 @@ struct task_stack init_stack = {
 
 
 
+void task0_main(unsigned long);
+void task1_main(unsigned long);
+CREATE_TASK(task0, task0_main);
+CREATE_TASK(task1, task1_main);
 
 
-
-
-
-
-
-struct task_stack stack0 __attribute__((section(".stacks")));
-struct task_struct task0 = { 
-    .cpu_context = {
-        .sp = (unsigned long)&stack0.stack[STACK_SZ-1],
-        .pc = (unsigned long)task0_main,
-    },
-    .task = task0_main,
-    .next = NULL,
-};
-
-struct task_stack stack0 = {
-    .task_struct = &task0,
-};
-
-struct task_stack stack1 __attribute__((section(".stacks")));
-struct task_struct task1 = { 
-    .cpu_context = {
-        .sp = (unsigned long)&stack1.stack[STACK_SZ-1],
-        .pc = (unsigned long)task1_main,
-    },
-    .task = task1_main,
-    .next = NULL,
-};
-
-struct task_stack stack1 = {
-    .task_struct = &task1,
-};
-
-int puts(const char *str)
+/* Exception SVC Test */
+void exception_svc(void)
 {
-	while (*str)
-		UART_DATA = *str++;
-	return 0;
+/*
+Supervisor call to allow application code to call the OS. 
+    It generates an exception targeting exception level 1 (EL1).
+*/
+    asm("svc #0xdead");
 }
+
 
 void init_main(unsigned long para)
 {
+    puts("enter init_main\n");
+    init_heap();
 
-    puts("Hello1\n");
-
+    exception_svc();
     __switch_to(&task0);
 
-	puts("Hello2\n");
+	puts("end init_main\n");
 	while (1);
 }
 

@@ -4,46 +4,55 @@
 
 ################################################
 IMAGE := NBOS.elf
+ROOT := $(shell pwd)
+
 
 CROSS_COMPILE = aarch64-elf-
 
+AS = $(CROSS_COMPILE)as
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 OBJDUMP = $(CROSS_COMPILE)objdump
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
+
+INC := $(ROOT)/include
+
+
 CFLAGS = -Wall -fno-common -O0 -g \
          -nostdlib -nostartfiles -ffreestanding \
-         -march=armv8-a
+         -march=armv8-a -I$(INC)
 
-AFLAGS = -g
+AFLAGS = -g -I$(INC)
+
+LDFLAGS = -nostartfiles
 
 INIT = init/start.o init/init_task.o
-KERNEL = kernel/task.o
+KERNEL = kernel/task.o kernel/exception.o
 MM = mm/mm.o
+LIB = lib/lib.o
 
 
+OBJS =  $(INIT) $(KERNEL) $(MM) $(LIB)
 
-OBJS =  $(INIT) $(KERNEL)
-
-LDS = etc/NBOS.ld
+LDSCRIPT = NBOS.ld
 
 all: $(IMAGE)
 
-$(IMAGE): $(LDS) $(OBJS)
-	$(LD) $(OBJS) -T$(LDS) -o $(IMAGE)
+$(IMAGE): $(OBJS)
+	$(LD) $(LDFLAGS) $(OBJS) -T$(LDSCRIPT) -o $(IMAGE)
 	$(OBJDUMP) -d NBOS.elf > NBOS.list
 	$(OBJDUMP) -t NBOS.elf | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > NBOS.sym
-	$(OBJCOPY) -O binary -S NBOS.elf NBOS.bin
+#	$(OBJCOPY) -O binary -S NBOS.elf NBOS.bin
 
-%.o : %.S %.h 
+%.o : %.S
 	$(AS) $(AFLAGS) $< -o $@
 
-%.o : %.c %.h 
+%.o : %.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 clean:
-	rm -f $(IMAGE) *.o *.list *.sym *.bin
+	rm -f $(IMAGE) $(OBJS) *.list *.sym *.bin
 
 .PHONY: all clean
 ############################################
