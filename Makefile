@@ -27,13 +27,14 @@ AFLAGS = -g -I$(INC)
 
 LDFLAGS = -nostartfiles
 
-INIT = init/start.o init/init_task.o
+ARCH = arch/aarch64.o arch/gic_v3.o arch/timer.o arch/start.o
+INIT = init/init_task.o
 KERNEL = kernel/task.o kernel/exception.o
 MM = mm/mm.o
 LIB = lib/lib.o
 
 
-OBJS =  $(INIT) $(KERNEL) $(MM) $(LIB)
+OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB)
 
 LDSCRIPT = NBOS.ld
 
@@ -91,14 +92,14 @@ gdb_srv:$(IMAGE)
 gdb_cli:$(IMAGE)
 	$(gdb) \
 		-ex="target remote $(qgdb_host):$(qgdb_port)" \
-		-ex="symbol-file kernel.elf" \
+		-ex="symbol-file $(IMAGE)" \
 		-ex="handle SIGUSR1 stop print nopass" \
 		-ex="layout regs" \
 		-ex="set disassemble-next-line on"
 
 dts:
 	$(qemu) -M virt,dumpdtb=virt.dtb $(cpu_config) -nographic
-	dtc -I dtb -O dts virt.dtb > etc/virt.dts
+	dtc -I dtb -O dts virt.dtb > arch/virt.dts
 	rm -f virt.dtb
 
 

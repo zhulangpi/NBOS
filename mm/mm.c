@@ -3,18 +3,18 @@
 
 
 /* heap 物理地址范围 */
-extern signed long __heap_start;
-extern unsigned long __heap_end;
-const unsigned long heap_start = (unsigned long)&__heap_start;
-const unsigned long heap_end = (unsigned long)&__heap_end;
+extern signed long __pages_start;
+extern unsigned long __pages_end;
+const unsigned long pages_start = (unsigned long)&__pages_start;
+const unsigned long pages_end = (unsigned long)&__pages_end;
 
 
 
 char *pheap = NULL;
 
-void init_heap(void)
+void init_mm(void)
 {
-    pheap = (char*)heap_start;
+    pheap = (char*)pages_start;
 }
 
 
@@ -23,7 +23,7 @@ void* kmalloc(unsigned long size)
     void *p = pheap;
     pheap += size;
 
-    if( (unsigned long)pheap > heap_end )
+    if( !p || ((unsigned long)pheap > pages_end) )
         return NULL;
 
     return p;

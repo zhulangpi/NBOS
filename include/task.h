@@ -1,7 +1,7 @@
 #ifndef _TASK_H_
 #define _TASK_H_
 
-#include "../include/type.h"
+#include "type.h"
 
 
 #define STACK_SZ (4<<10)

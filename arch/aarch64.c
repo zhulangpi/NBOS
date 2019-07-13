@@ -3,7 +3,8 @@
  */
 #include "aarch64.h"
 
-/* CurrentEL, Current Exception Level
+/* 
+    CurrentEL, Current Exception Level
 	EL, bits [3:2]
 		Current exception level. Possible values of this field are:
 		00 EL0
@@ -25,7 +26,8 @@ unsigned int get_current_el(void)
 	return ((current_el >> CURRENT_EL_SHIFT) & CURRENT_EL_MASK);
 }
 
-/* DAIF, Interrupt Mask Bits
+/* 
+    DAIF, Interrupt Mask Bits
 	Allows access to the interrupt mask bits.
 
 	D, bit [9]: Debug exceptions.
@@ -89,7 +91,8 @@ void disable_fiq(void)
 	__asm__ __volatile__("msr DAIFSet, %0\n\t" : : "i" (DAIF_FIQ_BIT)  : "memory");
 }
 
-/* SPSR_EL1, Saved Program Status Register (EL1)
+/* 
+    SPSR_EL1, Saved Program Status Register (EL1)
 	Holds the saved processor state when an exception is taken to EL1.
 */
 unsigned int raw_read_spsr_el1(void)
@@ -107,7 +110,7 @@ void raw_write_spsr_el1(unsigned int spsr_el1)
 
 
 /* 
-ISR_EL1, Interrupt Status Register
+    ISR_EL1, Interrupt Status Register
 	Shows whether an IRQ, FIQ, or SError interrupt is pending.
 */
 unsigned int raw_read_isr_el1(void)
@@ -119,7 +122,7 @@ unsigned int raw_read_isr_el1(void)
 }
 
 /* 
-RVBAR_EL1, Reset Vector Base Address Register (if EL2 and EL3 not implemented)
+    RVBAR_EL1, Reset Vector Base Address Register (if EL2 and EL3 not implemented)
 	If EL1 is the highest exception level implemented, contains the 
 	IMPLEMENTATION DEFINED address that execution starts from after reset when
 	executing in AArch64 state.
@@ -137,7 +140,8 @@ void raw_write_rvbar_el1(unsigned long rvbar_el1)
 	__asm__ __volatile__("msr RVBAR_EL1, %0\n\t" : : "r" (rvbar_el1) : "memory");
 }
 
-/* VBAR_EL1, Vector Base Address Register (EL1)
+/* 
+    VBAR_EL1, Vector Base Address Register (EL1)
 	Holds the exception base address for any exception that is taken to EL1.
 */
 unsigned long raw_read_vbar_el1(void)
@@ -153,7 +157,8 @@ void raw_write_vbar_el1(unsigned long vbar_el1)
 	__asm__ __volatile__("msr VBAR_EL1, %0\n\t" : : "r" (vbar_el1) : "memory");
 }
 
-/* CNTV_CTL_EL0, Counter-timer Virtual Timer Control register
+/* 
+    CNTV_CTL_EL0, Counter-timer Virtual Timer Control register
 	Control register for the virtual timer.
 
 	ISTATUS, bit [2]:	The status of the timer interrupt.
@@ -187,7 +192,7 @@ void enable_cntv(void)
 }
 
 /*
-CNTFRQ_EL0, Counter-timer Frequency register
+    CNTFRQ_EL0, Counter-timer Frequency register
 	Holds the clock frequency of the system counter.
 */
 unsigned int raw_read_cntfrq_el0(void)
@@ -203,7 +208,8 @@ void raw_write_cntfrq_el0(unsigned int cntfrq_el0)
 	__asm__ __volatile__("msr CNTFRQ_EL0, %0\n\t" : : "r" (cntfrq_el0) : "memory");
 }
 
-/* CNTVCT_EL0, Counter-timer Virtual Count register
+/* 
+    CNTVCT_EL0, Counter-timer Virtual Count register
 	Holds the 64-bit virtual count value.
 */
 unsigned long raw_read_cntvct_el0(void)
@@ -214,7 +220,8 @@ unsigned long raw_read_cntvct_el0(void)
 	return cntvct_el0;
 }
 
-/* CNTV_CVAL_EL0, Counter-timer Virtual Timer CompareValue register
+/* 
+    CNTV_CVAL_EL0, Counter-timer Virtual Timer CompareValue register
 	Holds the compare value for the virtual timer.
 */
 unsigned long raw_read_cntv_cval_el0(void)

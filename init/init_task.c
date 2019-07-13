@@ -1,7 +1,8 @@
-#include "reg.h"
 #include "task.h"
 #include "mm.h"
 #include "lib.h"
+#include "timer.h"
+
 
 void init_main(unsigned long);
 
@@ -27,23 +28,14 @@ CREATE_TASK(task0, task0_main);
 CREATE_TASK(task1, task1_main);
 
 
-/* Exception SVC Test */
-void exception_svc(void)
-{
-/*
-Supervisor call to allow application code to call the OS. 
-    It generates an exception targeting exception level 1 (EL1).
-*/
-    asm("svc #0xdead");
-}
 
 
 void init_main(unsigned long para)
 {
     puts("enter init_main\n");
-    init_heap();
+    init_mm();
 
-    exception_svc();
+    timer_init();
     __switch_to(&task0);
 
 	puts("end init_main\n");

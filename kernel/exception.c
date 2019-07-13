@@ -3,6 +3,8 @@
 
 void put_exception(unsigned long idx)
 {
+
+    puts("enter el1 exception ");
     
     switch(idx){
         case 0:
@@ -58,6 +60,7 @@ void put_exception(unsigned long idx)
             break;
     }
 
+    while(1);
 }
 
 

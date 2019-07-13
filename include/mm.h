@@ -2,7 +2,7 @@
 #define _MM_H_
 
 
-extern void init_heap();
+extern void init_mm();
 extern void* kmalloc(unsigned long size);
 
 #endif

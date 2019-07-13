@@ -6,7 +6,7 @@ SECTIONS
 	. = 0x40000000;
 /*    .start : { start.o(.text)  }  */
 	.text : { 
-        init/start.o  (CODE_ENTRY)
+        arch/start.o  (CODE_ENTRY)
         *(.text) 
     }
     
@@ -30,11 +30,12 @@ SECTIONS
 
     .stacks : { *(.stacks) }
 
+    . = 0x40100000;      /* 1MB */
     . = ALIGN(4096);    /* 按页对齐，后面的全部作为堆管理 */
-    __heap_start = .;
+    __pages_start = .;
 
-    . = 0x80000000;
-    __heap_end = .;
+    . = 0x41000000;     /* 16MB */
+    __pages_end = .;
     __ram_addr_end = .;
 }
 
