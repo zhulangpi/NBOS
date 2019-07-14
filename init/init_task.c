@@ -34,7 +34,9 @@ void init_main(unsigned long para)
 {
     puts("enter init_main\n");
     init_mm();
-
+	
+	malloc_test();
+	
     timer_init();
     __switch_to(&task0);
 

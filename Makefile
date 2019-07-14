@@ -31,7 +31,7 @@ ARCH = arch/aarch64.o arch/gic_v3.o arch/timer.o arch/start.o
 INIT = init/init_task.o
 KERNEL = kernel/task.o kernel/exception.o
 MM = mm/mm.o
-LIB = lib/lib.o
+LIB = lib/lib.o lib/malloc.o
 
 
 OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB)
