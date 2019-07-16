@@ -20,8 +20,6 @@
 #include "gic_v3.h"
 #include "lib.h"
 
-#define IRQ_FOUND 1
-#define IRQ_NOT_FOUND 0
 
 /* Initialize GIC Controller */
 static void init_gicc(void)
@@ -216,7 +214,7 @@ void gic_v3_initialize(void)
     @param[in]     exc  An exception frame
     @param[in,out] irqp An IRQ number to be processed
  */
-int gic_v3_find_pending_irq(int *irqp) {
+int gic_v3_find_pending_irq(struct exception_frame* exc, int *irqp) {
 	int rc;
 	int i;
 	for( i = 0; GIC_INT_MAX > i; ++i) {

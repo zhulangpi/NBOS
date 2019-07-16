@@ -28,7 +28,7 @@ SECTIONS
 
     . = ALIGN(4096); /* 4KB align */
 
-    .stacks : { *(.stacks) }
+    .stacks : { *(.stacks) }    /* 内核栈 */
 
     . = 0x40100000;      /* 1MB */
     . = ALIGN(4096);    /* 按页对齐，后面的全部作为堆管理 */
