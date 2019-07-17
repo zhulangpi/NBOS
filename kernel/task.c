@@ -9,13 +9,18 @@ extern void cpu_switch_to( struct task_struct *next );
 
 struct task_struct* task_queue[TASK_QUEUE_LENGTH] = {0};
 
+struct task_struct* next = NULL;
+
+
 
 //任务切换，运行在A任务的内核栈中，
 //保存A的寄存器组，恢复B的寄存器组，
 //跳转
 void switch_to(struct task_struct *next)
 {
-
+    while( next->state!=RUNNING ){
+        schelude_tick();
+    }
     //切换寄存器组
     cpu_switch_to(next);
 
@@ -38,6 +43,7 @@ void task_init( struct task_struct *p, void (*main)(void) )
     //设置寄存器组初值
     p->cpu_context.pc = (unsigned long)main;
 
+
 }
 
 //将任务p添加到任务队列
@@ -46,14 +52,17 @@ void task_add(struct task_struct *p)
     int i =0;
 
     for(i=0; i< TASK_QUEUE_LENGTH; i++ ){
-        if( task_queue[i] == p )
+        if( task_queue[i] == p ){
+            next = p;
             return;     //已在队列中
+        }
     }
 
     for(i=0; i< TASK_QUEUE_LENGTH; i++ ){
         if( (task_queue[i]==NULL) || (task_queue[i]->state==DEAD) ){
             task_queue[i] = p;
             p->state = RUNNING;
+            next = p;
             puts("add success\n");
             return ;
         }
@@ -66,13 +75,14 @@ void task_add(struct task_struct *p)
 
 }
 
-//从任务队列中选择一个状态为RUNNING的任务来运行
-void schelude(void)
+//周期调度器
+//从任务队列中选择一个状态为RUNNING的任务
+void schelude_tick(void)
 {
     int i = 0;
     static int idx = 0 ;
 
-    puts("schelude\n");
+   // puts("schelude\n");
 
     for(i=0; i<TASK_QUEUE_LENGTH; i++){
         idx++;
@@ -80,9 +90,22 @@ void schelude(void)
             idx = 0;
 
         if( task_queue[idx]->state == RUNNING ){
-            switch_to( task_queue[idx] );
+            next = task_queue[idx];
+            break;
         }
     }
+
+}
+
+//核心调度器
+//调度执行，只在异常返回用户态时才允许调用
+void schelude_core()
+{
+    while( next->state!=RUNNING ){
+        schelude_tick();
+    }
+    //切换寄存器组
+    switch_to(next);
 
 }
 

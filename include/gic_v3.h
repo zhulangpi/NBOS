@@ -18,8 +18,6 @@
 #if !defined(_GIC_V3_H)
 #define _GIC_V3_H 
 
-#include "board.h"
-#include "exception.h"
 
 
 #define GIC_GICD_BASE		(GIC_BASE)  /* GICD MMIO base address */
@@ -125,7 +123,7 @@ this register determines only Group 0 interrupt preemption. */
 
 void gic_v3_initialize(void);
 void gic_v3_eoi(int irq);
-int gic_v3_find_pending_irq(struct exception_frame* exc, int *irqp);
+int gic_v3_find_pending_irq(int *irqp);
 void gicd_disable_int(int irq);
 void gicd_enable_int(int irq);
 void gicd_clear_pending(int irq);

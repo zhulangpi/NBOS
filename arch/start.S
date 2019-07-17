@@ -87,7 +87,7 @@ cpu_switch_to:
     stp x11, x12, [sp, #-16]!
     //x30
     ldr x11, [x10], #8
-    str x11, [sp, #-8]!
+    stp x11, xzr, [sp, #-16]!
     //sp
     ldr x11, [x10], #8
     msr sp_el0, x11
@@ -97,22 +97,22 @@ cpu_switch_to:
 
     mrs x11, spsr_el1
     //sp,pc预设完毕，恢复x0-x30，堆栈此时存的是x30，逆序恢复
-    ldr x30, [sp],  #8
-    ldp x29, x28, [sp], #16
-    ldp x27, x26, [sp], #16
-    ldp x25, x24, [sp], #16
-    ldp x23, x22, [sp], #16
-    ldp x21, x20, [sp], #16
-    ldp x19, x18, [sp], #16
-    ldp x17, x16, [sp], #16
-    ldp x15, x14, [sp], #16
-    ldp x13, x12, [sp], #16
-    ldp x11, x10, [sp], #16
-    ldp x9,  x8,  [sp], #16
-    ldp x7,  x6,  [sp], #16
-    ldp x5,  x4,  [sp], #16
-    ldp x3,  x2,  [sp], #16
-    ldp x1,  x0,  [sp], #16
+    ldp x30, xzr, [sp],  #16
+    ldp x28, x29, [sp], #16
+    ldp x26, x27, [sp], #16
+    ldp x24, x25, [sp], #16
+    ldp x22, x23, [sp], #16
+    ldp x20, x21, [sp], #16
+    ldp x18, x19, [sp], #16
+    ldp x16, x17, [sp], #16
+    ldp x14, x15, [sp], #16
+    ldp x12, x13, [sp], #16
+    ldp x10, x11, [sp], #16
+    ldp x8,  x9,  [sp], #16
+    ldp x6,  x7,  [sp], #16
+    ldp x4,  x5,  [sp], #16
+    ldp x2,  x3,  [sp], #16
+    ldp x0,  x1,  [sp], #16
     //寄存器恢复完毕，返回到用户态任务
     eret
     .type cpu_switch_to, @function

@@ -9,12 +9,9 @@
 
 
 //任务状态定义
-#define DEAD    0
-#define RUNNING 1
-#define STOP    2
-
-
-
+#define DEAD    0   //任务刚创建或任务被杀死
+#define RUNNING 1   //任务可以运行
+#define STOP    2   //任务被暂停或阻塞
 
 
 //在陷入内核时，需要先保存的有
@@ -93,11 +90,10 @@ static __always_inline struct task_struct *get_current(void)
 #define current get_current()
 
 
-
-
 extern void switch_to(struct task_struct *next);
 extern void task_init( struct task_struct *p, void (*main)(void) );
 extern void task_add(struct task_struct *p);
-extern void schelude(void);
+extern void schelude_core(void);
+extern void schelude_tick(void);
 
 #endif

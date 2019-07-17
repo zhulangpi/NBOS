@@ -26,7 +26,6 @@ static void init_gicc(void)
 {
 	unsigned int pending_irq;
 
-    puts("init_gicc()\n");
 	/* Disable CPU interface */
 	*REG_GIC_GICC_CTLR = GICC_CTLR_DISABLE;
 
@@ -54,7 +53,6 @@ static void init_gicd(void)
 {
 	int	i, regs_nr;
 
-    puts("init_gicd()\n");
 	/* Diable distributor */
 	*REG_GIC_GICD_CTLR = GIC_GICD_CTLR_DISABLE;
 
@@ -199,7 +197,6 @@ void gic_v3_eoi(int irq) {
 void gic_v3_initialize(void)
 {
 
-    puts("gic_v3_initialize()\n");
 	init_gicd();
 	init_gicc();
 	gicd_config(TIMER_IRQ, GIC_GICD_ICFGR_EDGE);
@@ -214,7 +211,8 @@ void gic_v3_initialize(void)
     @param[in]     exc  An exception frame
     @param[in,out] irqp An IRQ number to be processed
  */
-int gic_v3_find_pending_irq(struct exception_frame* exc, int *irqp) {
+int gic_v3_find_pending_irq(int *irqp)
+{
 	int rc;
 	int i;
 	for( i = 0; GIC_INT_MAX > i; ++i) {

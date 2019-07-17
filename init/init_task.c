@@ -16,7 +16,7 @@ CREATE_TASK(task0);
 void task1_main(void);
 CREATE_TASK(task1);
 
-
+#define RUN_TIMES 3
 
 
 //内核初始化线程，初始化系统后跳转到idle用户态任务
@@ -26,7 +26,7 @@ void init_main()
 
     init_mm();
 
-//    timer_init();
+    timer_init();
 
     task_init( idle_task, idle_main );
     task_add( idle_task );
@@ -36,8 +36,8 @@ void init_main()
     task_add( task1 );
 
 
-//  切换到el0，并进行调度
-    schelude();
+    //切换到第一个用户态任务
+    schelude_core();
 	puts("end init_main\n");
     while(1);
 }
@@ -45,16 +45,16 @@ void init_main()
 //用户态任务函数
 void idle_main(void)
 {
-    unsigned long a = 10;
+    unsigned long a = RUN_TIMES;
 
     puts("enter idle main\n");
 
     while(1){
         putlu(a--);
         puts(" idle\n");
-        syscall(0);
-        if(a==1)
-            while(1);
+   //     syscall(0);
+       // if(a==0)
+         //   while(1);
     };
 }
 
@@ -64,7 +64,7 @@ void task0_main(void)
     register unsigned long x0 = 1, x1 = 2, x2 = 3, x3 = 4, x4 = 5, x5 = 6, x6 = 7, x7 = 8, x8 = 9, x9 = 10;
     register unsigned long x10 = 11, x11 = 12, x12 = 13, x13 = 14, x14 = 15, x15 = 16, x16 = 17, x17 = 18, x18 = 19, x19 = 20;
     register unsigned long x20 = 21, x21 = 22, x22 = 23, x23 =24, x24 = 25, x25 = 26, x26 = 27, x27 = 28, x28 = 29, x29 = 30, x30=31;
-    unsigned long a = 10;
+    unsigned long a = RUN_TIMES;
 
     puts("enter task0\n");
     
@@ -98,20 +98,21 @@ void task0_main(void)
         putlu(x25);
         putlu(x26);
         putlu(x27);
+
         putlu(x28);
         putlu(x29);
         putlu(x30);
         puts(" task0\n");
-        syscall(0);
+   //     syscall(0);
 
-        if(a==1)
-            while(1);
+    //    if(a==0)
+      //      while(1);
     }
 }
 
 void task1_main(void)
 {
-    unsigned long a = 10;
+    unsigned long a = RUN_TIMES;
     char s[100] = "qwertyuioplkjhgfdsazxcvbnm";
 
     puts("enter task1\n");
@@ -120,9 +121,9 @@ void task1_main(void)
         a--;
         puts(s);
         puts(" task1\n");
-        syscall(0);
-        if(a==1)
-            while(1);
+  //      syscall(0);
+//        if(a==0)
+  //          while(1);
     }
 }
 

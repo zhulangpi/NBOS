@@ -2,7 +2,8 @@
 #define _SYSCALL_H_
 
 
-extern void syscall(int syscall_no);
+extern void send_syscall(int syscall_no);
+extern void syscall_dispatch(int syscall_no);
 
 
 

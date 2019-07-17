@@ -3,10 +3,10 @@
 #include "gic_v3.h"
 #include "lib.h"
 #include "timer.h"
+#include "task.h"
 
 
-
-#define TIMER_PERIOD_MS  500
+#define TIMER_PERIOD_MS  50
 
 static unsigned long ticks;
 
@@ -22,7 +22,7 @@ void timer_handler(void)
 	gicd_clear_pending(TIMER_IRQ);
 
 
-
+    schelude_tick();
 
 
 
