@@ -240,7 +240,7 @@ _lower_el_aarch64_sync:
     msr spsr_el1, x3
 
 //切换到某个任务上下文
-    bl   schelude_core      //实际不会返回
+    bl   schedule      //实际不会返回
     eret
 
 
@@ -321,7 +321,7 @@ _lower_el_aarch64_irq:
     msr spsr_el1, x3
 
 //切换到某个任务上下文
-    bl   schelude_core   //实际不会返回
+    bl   schedule   //实际不会返回
     eret
 
     text_align

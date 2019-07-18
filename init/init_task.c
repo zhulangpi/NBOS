@@ -37,7 +37,7 @@ void init_main()
 
 
     //切换到第一个用户态任务
-    schelude_core();
+    schedule();
 	puts("end init_main\n");
     while(1);
 }

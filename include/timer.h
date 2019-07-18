@@ -4,4 +4,6 @@
 extern void timer_init(void);
 extern void timer_handler(void);
 
+extern unsigned long ticks;
+
 #endif  /* _TIMER_H  */

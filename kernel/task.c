@@ -19,7 +19,7 @@ struct task_struct* next = NULL;
 void switch_to(struct task_struct *next)
 {
     while( next->state!=RUNNING ){
-        schelude_tick();
+        scheduler_tick();
     }
     //切换寄存器组
     cpu_switch_to(next);
@@ -77,7 +77,7 @@ void task_add(struct task_struct *p)
 
 //周期调度器
 //从任务队列中选择一个状态为RUNNING的任务
-void schelude_tick(void)
+void scheduler_tick(void)
 {
     int i = 0;
     static int idx = 0 ;
@@ -97,12 +97,12 @@ void schelude_tick(void)
 
 }
 
-//核心调度器
+//主调度器
 //调度执行，只在异常返回用户态时才允许调用
-void schelude_core()
+void schedule()
 {
     while( next->state!=RUNNING ){
-        schelude_tick();
+        scheduler_tick();
     }
     //切换寄存器组
     switch_to(next);

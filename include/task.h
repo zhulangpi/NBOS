@@ -93,7 +93,7 @@ static __always_inline struct task_struct *get_current(void)
 extern void switch_to(struct task_struct *next);
 extern void task_init( struct task_struct *p, void (*main)(void) );
 extern void task_add(struct task_struct *p);
-extern void schelude_core(void);
-extern void schelude_tick(void);
+extern void schedule(void);
+extern void scheduler_tick(void);
 
 #endif
