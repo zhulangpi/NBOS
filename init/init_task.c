@@ -45,9 +45,11 @@ void init_main()
 //用户态任务函数
 void idle_main(void)
 {
+
     unsigned long a = RUN_TIMES;
 
     puts("enter idle main\n");
+
 
     while(1){
         putlu(a--);
