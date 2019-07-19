@@ -3,12 +3,12 @@
 #include "gic_v3.h"
 #include "lib.h"
 #include "timer.h"
+#include "task.h"
+#include "soft_timer.h"
 
+#define TIMER_PERIOD_MS  50
 
-
-#define TIMER_PERIOD_MS  500
-
-static unsigned long ticks;
+unsigned long ticks;
 
 /* Assert Timer IRQ after TIMER_PERIOD_MS ms */
 void timer_handler(void)
@@ -22,8 +22,8 @@ void timer_handler(void)
 	gicd_clear_pending(TIMER_IRQ);
 
 
-
-
+    scheduler_tick();
+    walk_timer_list();
 
 
 	// Get value of the current timer

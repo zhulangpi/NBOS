@@ -1,142 +1,120 @@
-#include "reg.h"
+#include "asm/arm_asm.h"
 
-    .text
+
 /* creates section containing entry code */
     .section CODE_ENTRY, "x"
 /* exporting the name to the linker */
     .globl  _start
-    .align  4
+    text_align
 _start:
     //Initialize VBAR_EL1
     ldr x0, =vector_table_el1
     msr vbar_el1,   x0
 
-    /* configure init task stack */
+    /* configure init kernel task stack */
     adrp    x0, __init_stack_top
-    mov     sp, x0
+    mov     sp, x0          //sp_el1
 
     b       init_main
-
-// Typical exception vector table code.
-
-    .balign 0x800
-    vector_table_el1:
-    curr_el_sp0_sync:   // The exception handler for the synchronous exception from the current EL using SP0.
-    mov x0, #0
-    b   put_exception
-
-    .balign 0x80
-    curr_el_sp0_irq:    // The exception handler for the IRQ exception from the current EL using SP0.
-    mov x0, #1
-    b   put_exception
-
-    .balign 0x80
-    curr_el_sp0_fiq:    // The exception handler for the FIQ exception from the current EL using SP0.
-    mov x0, #2
-    b   put_exception
-
-    .balign 0x80
-    curr_el_sp0_serror: // The exception handler for the system error exception from the current EL using SP0.
-    mov x0, #3
-    b   put_exception
-
-//EL1级别发生的本地异常在此处理
-    .balign 0x80
-    curr_el_spx_sync:   // The exception handler for the synchronous exception from the current EL using the current SP.
-    mov x0, #4
-    b   put_exception
-
-    .balign 0x80
-    curr_el_spx_irq:    // The exception handler for IRQ exception from the current EL using the current SP.
-    mov x0, #5
-    bl   timer_handler
-    eret
-
-    .balign 0x80
-    curr_el_spx_fiq:    // The exception handler for the FIQ exception from the current EL using the current SP.
-    mov x0, #6
-    b   put_exception
-
-    .balign 0x80
-    curr_el_spx_serror: // The exception handler for the system error exception from the current EL using the current SP.
-    mov x0, #7
-    b   put_exception
-
-
-
-    .balign 0x80
-    lower_el_aarch64_sync:  // The exception handler for the synchronous exception from a lower EL (AArch64).
-    mov x0, #8
-    b   put_exception
-
-    .balign 0x80
-    lower_el_aarch64_irq:   // The exception handler for the IRQ exception from a lower EL (AArch64).
-    mov x0, #9
-    b   put_exception
-
-    .balign 0x80
-    lower_el_aarch64_fiq:       // The exception handler for the FIQ exception from a lower EL (AArch64).
-    mov x0, #10
-    b   put_exception
-
-    .balign 0x80
-    lower_el_aarch64_serror:    // The exception handler for the system error exception from a lower EL(AArch64).
-    mov x0, #11
-    b   put_exception
-
-    .balign 0x80
-    lower_el_aarch32_sync:      // The exception handler for the synchronous exception from a lower EL(AArch32).
-    mov x0, #12
-    b   put_exception
-
-    .balign 0x80
-    lower_el_aarch32_irq:       // The exception handler for the IRQ exception from a lower EL (AArch32).
-    mov x0, #13
-    b   put_exception
-
-    .balign 0x80
-    lower_el_aarch32_fiq:       // The exception handler for the FIQ exception from a lower EL (AArch32).
-    mov x0, #14
-    b   put_exception
-
-    .balign 0x80
-    lower_el_aarch32_serror:    // The exception handler for the system error exception from a lower EL(AArch32)
-    mov x0, #15
-    b   put_exception
 
 
 
 
 
 /* 
-    任务A调用cpu_switch_to，切换到任务B，X0--prev tast_struct, X1--next task_struct
-    lr(x30)中保存着cpu_switch_to的返回地址
-    x9保存进函数时的sp，之后也保存进cpu_context
+    任务A通过系统调用陷入el1，发起调度，在cpu_switch_to中实现寄存器组的切换，切换到任务B，x0--prev tast_struct*, x1--next task_struct*
+
+    A在陷入el1时就保存了A的寄存器组，此时在内核栈，寄存器组可以随便用了，直接恢复寄存器组后返回到el0中的B
+
+    恢复过程，先从内存(cpu_context)中读取到内核栈中，再从内核栈中弹出到寄存器组，这是因为寄存器组在恢复的时候不能使用
+
 */
 
     .globl  cpu_switch_to
-    .align  4
+    text_align
 cpu_switch_to:
-    mov x10, #0    //获得offsetof( struct task_struct, cpu_context),暂定为0
-    add x8, x0, x10             //x8 = &(prev->cpu_context)
-    mov x9, sp                  //x9 = sp
-    stp x19, x20, [x8], #16     // store callee-saved registers
-    stp x21, x22, [x8], #16
-    stp x23, x24, [x8], #16
-    stp x25, x26, [x8], #16
-    stp x27, x28, [x8], #16
-    stp x29, x9, [x8], #16
-    str x30, [x8]               // lr==x30，prev->cpu_context.pc = lr
-    add x8, x1, x10
-    ldp x19, x20, [x8], #16     // restore callee-saved registers
-    ldp x21, x22, [x8], #16
-    ldp x23, x24, [x8], #16
-    ldp x25, x26, [x8], #16
-    ldp x27, x28, [x8], #16
-    ldp x29, x9, [x8], #16
-    ldr x30, [x8]               // lr = next->cpu_context.pc
-    mov sp, x9                  //设置好sp为next的堆栈
-    ret                         //跳转到lr
+    mov x9,    #0              //offsetof( struct task_struct, cpu_context)
+    add x10, x0, x9             //x10 = &(next->cpu_context)
+
+    //切换内核栈
+    add x1,  x0, #4096
+    mov sp,  x1
+
+    //x0,x1
+    ldp x11, x12, [x10], #16        //读x0,x1
+    stp x11, x12, [sp, #-16]!       //x0,x1压栈
+    //x2,x3
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x4,x5
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x6,x7
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x8,x9
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x10,x11
+    ldp x11, x12, [x10], #16        
+    stp x11, x12, [sp, #-16]!
+    //x12,x13
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x14,x15
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x16,x17
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x18,x19
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x20,x21
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x22,x23
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x24,x25
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x26,x27
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x28,x29
+    ldp x11, x12, [x10], #16
+    stp x11, x12, [sp, #-16]!
+    //x30
+    ldr x11, [x10], #8
+    stp x11, xzr, [sp, #-16]!
+    //sp
+    ldr x11, [x10], #8
+    msr sp_el0, x11
+    //pc
+    ldr x11, [x10], #8
+    msr elr_el1, x11
+
+    mrs x11, spsr_el1
+    //sp,pc预设完毕，恢复x0-x30，堆栈此时存的是x30，逆序恢复
+    ldp x30, xzr, [sp],  #16
+    ldp x28, x29, [sp], #16
+    ldp x26, x27, [sp], #16
+    ldp x24, x25, [sp], #16
+    ldp x22, x23, [sp], #16
+    ldp x20, x21, [sp], #16
+    ldp x18, x19, [sp], #16
+    ldp x16, x17, [sp], #16
+    ldp x14, x15, [sp], #16
+    ldp x12, x13, [sp], #16
+    ldp x10, x11, [sp], #16
+    ldp x8,  x9,  [sp], #16
+    ldp x6,  x7,  [sp], #16
+    ldp x4,  x5,  [sp], #16
+    ldp x2,  x3,  [sp], #16
+    ldp x0,  x1,  [sp], #16
+    //寄存器恢复完毕，返回到用户态任务
+    eret
     .type cpu_switch_to, @function
     .size cpu_switch_to, .-cpu_switch_to
 

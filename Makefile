@@ -9,7 +9,7 @@ ROOT := $(shell pwd)
 
 CROSS_COMPILE = aarch64-elf-
 
-AS = $(CROSS_COMPILE)as
+AS = $(CROSS_COMPILE)gcc
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 OBJDUMP = $(CROSS_COMPILE)objdump
@@ -27,9 +27,9 @@ AFLAGS = -g -I$(INC)
 
 LDFLAGS = -nostartfiles
 
-ARCH = arch/aarch64.o arch/gic_v3.o arch/timer.o arch/start.o
+ARCH = arch/aarch64.o arch/gic_v3.o arch/timer.o arch/start.o arch/exception.o arch/vector.o
 INIT = init/init_task.o
-KERNEL = kernel/task.o kernel/exception.o
+KERNEL = kernel/task.o kernel/syscall.o kernel/soft_timer.o
 MM = mm/mm.o
 LIB = lib/lib.o lib/malloc.o
 
@@ -47,7 +47,8 @@ $(IMAGE): $(OBJS)
 #	$(OBJCOPY) -O binary -S NBOS.elf NBOS.bin
 
 %.o : %.S
-	$(AS) $(AFLAGS) $< -o $@
+#	$(AS) $(AFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -c -o $@     # for include header file in assembly
 
 %.o : %.c
 	$(CC) $(CFLAGS) $< -c -o $@

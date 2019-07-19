@@ -5,9 +5,42 @@
 
 
 #define STACK_SZ (4<<10)
+#define USER_STACK_SZ   STACK_SZ
 
+
+//任务状态定义
+#define DEAD    0   //任务刚创建或任务被杀死
+#define RUNNING 1   //任务可以运行
+#define STOP    2   //任务被暂停或阻塞
+
+
+//在陷入内核时，需要先保存的有
+//  x0-x30      全部必须保存
+//  sp_el0      需要保存，异常返回时，可能切换任务
+//  elr_el1     即pc，需要保存
+//  pc          任务切换时的跳转地址
+//  spsr_el1    需要保存，但是应该保存到异常栈帧里，是任务无关的
 
 struct cpu_context {
+    unsigned long x0;
+    unsigned long x1;
+    unsigned long x2;
+    unsigned long x3;
+    unsigned long x4;
+    unsigned long x5;
+    unsigned long x6;
+    unsigned long x7;
+    unsigned long x8;
+    unsigned long x9;
+    unsigned long x10;
+    unsigned long x11;
+    unsigned long x12;
+    unsigned long x13;
+    unsigned long x14;
+    unsigned long x15;
+    unsigned long x16;
+    unsigned long x17;
+    unsigned long x18;
     unsigned long x19;
     unsigned long x20;
     unsigned long x21;
@@ -18,28 +51,30 @@ struct cpu_context {
     unsigned long x26;
     unsigned long x27;
     unsigned long x28;
-    unsigned long fp;
-    unsigned long sp;
-    unsigned long pc;
+    unsigned long x29;  //fp
+    unsigned long x30;  //lr
+    unsigned long sp;   //用户态栈，调度器在允许下一个进程运行前，要先设置好sp_el0
+    unsigned long pc;   //通过赋值elr_el1，eret来实现返回
 };
 
+
+#define TASK_QUEUE_LENGTH   32
 
 /* 任务描述符 */
 struct task_struct{
     struct cpu_context cpu_context;
-    void (*task)(unsigned long para);
-    struct task_struct* next;
-};
-
-struct task_stack{
-    union{
-        struct task_struct* task_struct;
-        char stack[STACK_SZ];
-    };
+    void (*main)(void);
+    int state;
 };
 
 
-/* 从sp得到任务描述符*/
+//定义一个任务
+#define CREATE_TASK(name) \
+    char stack_##name[STACK_SZ] __attribute__((section(".stacks"))); \
+    struct task_struct *name = (struct task_struct*)stack_##name ;
+
+
+/* 从内核栈指针得到任务描述符 */
 static __always_inline struct task_struct *get_current(void)
 {
     unsigned long sp;
@@ -55,24 +90,10 @@ static __always_inline struct task_struct *get_current(void)
 #define current get_current()
 
 
-#define CREATE_TASK(name, func) \
-    struct task_stack stack_##name __attribute__((section(".stacks"))); \
-    struct task_struct name = { \
-    .cpu_context = { \
-        .sp = (unsigned long)&stack_##name.stack[STACK_SZ-1], \
-        .pc = (unsigned long)func, \
-    }, \
-    .task = func, \
-    .next = NULL, \
-}; \
-struct task_stack stack_##name = { \
-    .task_struct = &name, \
-};
-
-
-
-/* Thread switching */
-extern void __switch_to(struct task_struct *next);
-
+extern void switch_to(struct task_struct *next);
+extern void task_init( struct task_struct *p, void (*main)(void) );
+extern void task_add(struct task_struct *p);
+extern void schedule(void);
+extern void scheduler_tick(void);
 
 #endif

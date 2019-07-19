@@ -18,11 +18,6 @@
 #if !defined(_GIC_V3_H)
 #define _GIC_V3_H 
 
-#if !defined(_BOARD_H)
-#error "Include board.h before this header file."
-#endif  /* !_BOARD_H */
-
-#include "exception.h"
 
 
 #define GIC_GICD_BASE		(GIC_BASE)  /* GICD MMIO base address */
