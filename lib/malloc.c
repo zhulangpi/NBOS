@@ -48,7 +48,7 @@ static inline void init_bucket_desc()
 	free_bucket_desc = first;
 }
 
-void *malloc(unsigned int len)
+void *kmalloc(unsigned int len)
 {
 	struct _bucket_dir	*bdir;
 	struct bucket_desc	*bdesc;
@@ -160,19 +160,22 @@ found:
 void malloc_test(void)
 {
 	puts("malloc test\n");
-	int *p = (int *)malloc(sizeof(int));
+	int *p = (int *)kmalloc(sizeof(int));
+	int *p1 = (int *)kmalloc(sizeof(int));
+	putlx((long)p);puts("\n");
+	putlx((long)p1);puts("\n");
+	free(p);
+	free(p1);
+
+	p = (int *)kmalloc(sizeof(int));
 	putlx((long)p);puts("\n");
 	free(p);
 
-	p = (int *)malloc(sizeof(int));
+	p = (int *)kmalloc(4096);
 	putlx((long)p);puts("\n");
 	free(p);
 
-	p = (int *)malloc(4096);
-	putlx((long)p);puts("\n");
-	free(p);
-
-	p = (int *)malloc(4096);
+	p = (int *)kmalloc(4096);
 	putlx((long)p);puts("\n");
 	free(p);
 }

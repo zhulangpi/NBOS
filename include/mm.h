@@ -1,6 +1,8 @@
 #ifndef _MM_H_
 #define _MM_H_
 
+#include "type.h"
+
 #define PAGE_SIZE 4096
 #define PAGE_SIZE_SHIFT 12
 #define LOW_MEM 0x40100000						// 内存低端(1MB)
@@ -10,10 +12,12 @@
 #define MAP_NR(addr) (((addr)-LOW_MEM)>>PAGE_SIZE_SHIFT)		// 指定内存地址映射的页号
 #define USED 100
 
-extern void init_mm();
-extern void* kmalloc(unsigned long size);
+struct page {
+	atomic_t _count;	/* Usage count */
+};
 
-unsigned long get_free_page();
-void free_page(unsigned long p);
+extern void init_mm();
+extern unsigned long get_free_page();
+extern void free_page(unsigned long p);
 
 #endif
