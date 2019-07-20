@@ -7,6 +7,7 @@ IMAGE := NBOS.elf
 ROOT := $(shell pwd)
 
 
+#CROSS_COMPILE = aarch64-linux-gnu-
 CROSS_COMPILE = aarch64-elf-
 
 AS = $(CROSS_COMPILE)gcc
@@ -21,9 +22,9 @@ INC := $(ROOT)/include
 
 CFLAGS = -Wall -fno-common -O0 -g \
          -nostdlib -nostartfiles -ffreestanding \
-         -march=armv8-a -I$(INC)
+         -march=armv8-a -I$(INC) -mgeneral-regs-only
 
-AFLAGS = -g -I$(INC)
+AFLAGS = -I$(INC)
 
 LDFLAGS = -nostartfiles
 
@@ -36,7 +37,7 @@ LIB = lib/lib.o
 
 OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB)
 
-LDSCRIPT = NBOS.ld
+LDSCRIPT = linker.ld
 
 all: $(IMAGE)
 

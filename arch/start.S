@@ -7,6 +7,17 @@
     .globl  _start
     text_align
 _start:
+    //MMU
+//    ldr x1, =0x3520 //4GB空间 4KB粒度 Inner-shareable
+//    msr tcr_el1, x1
+
+//    ldr x1, =0xffffffff
+//    msr mair_el1, x1
+
+//    adr x0, ttb0_base
+//    msr ttbr0_el1, x0
+
+
     //Initialize VBAR_EL1
     ldr x0, =vector_table_el1
     msr vbar_el1,   x0
@@ -19,103 +30,51 @@ _start:
 
 
 
+/*
+    任务A总是在内核态切换为任务B，切换是一个子函数，子函数返回时，只需要恢复x19-x29，x30(lr)，因此只需要保存这些再加上sp
+   
+    下一次调度到A时，就是恢复x19-x30,sp，就可以返回到调用cpu_switch_to的函数f，f是使用A的内核栈的内核代码
+ 
+    sp_el0的保存恢复由对应任务的陷入内核的异常来保存，因为这些寄存器是恢复异常时需要的
 
-
-/* 
-    任务A通过系统调用陷入el1，发起调度，在cpu_switch_to中实现寄存器组的切换，切换到任务B，x0--prev tast_struct*, x1--next task_struct*
-
-    A在陷入el1时就保存了A的寄存器组，此时在内核栈，寄存器组可以随便用了，直接恢复寄存器组后返回到el0中的B
-
-    恢复过程，先从内存(cpu_context)中读取到内核栈中，再从内核栈中弹出到寄存器组，这是因为寄存器组在恢复的时候不能使用
-
+    所以任务切换是在内核处理途中插入代码完成的，而不是必须在内核返回到用户态时进行的
 */
 
     .globl  cpu_switch_to
     text_align
 cpu_switch_to:
-    mov x9,    #0              //offsetof( struct task_struct, cpu_context)
-    add x10, x0, x9             //x10 = &(next->cpu_context)
-
-    //切换内核栈
-    add x1,  x0, #4096
-    mov sp,  x1
-
-    //x0,x1
-    ldp x11, x12, [x10], #16        //读x0,x1
-    stp x11, x12, [sp, #-16]!       //x0,x1压栈
-    //x2,x3
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x4,x5
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x6,x7
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x8,x9
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x10,x11
-    ldp x11, x12, [x10], #16        
-    stp x11, x12, [sp, #-16]!
-    //x12,x13
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x14,x15
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x16,x17
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x18,x19
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x20,x21
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x22,x23
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x24,x25
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x26,x27
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x28,x29
-    ldp x11, x12, [x10], #16
-    stp x11, x12, [sp, #-16]!
-    //x30
-    ldr x11, [x10], #8
-    stp x11, xzr, [sp, #-16]!
-    //sp
-    ldr x11, [x10], #8
-    msr sp_el0, x11
-    //pc
-    ldr x11, [x10], #8
-    msr elr_el1, x11
-
-    mrs x11, spsr_el1
-    //sp,pc预设完毕，恢复x0-x30，堆栈此时存的是x30，逆序恢复
-    ldp x30, xzr, [sp],  #16
-    ldp x28, x29, [sp], #16
-    ldp x26, x27, [sp], #16
-    ldp x24, x25, [sp], #16
-    ldp x22, x23, [sp], #16
-    ldp x20, x21, [sp], #16
-    ldp x18, x19, [sp], #16
-    ldp x16, x17, [sp], #16
-    ldp x14, x15, [sp], #16
-    ldp x12, x13, [sp], #16
-    ldp x10, x11, [sp], #16
-    ldp x8,  x9,  [sp], #16
-    ldp x6,  x7,  [sp], #16
-    ldp x4,  x5,  [sp], #16
-    ldp x2,  x3,  [sp], #16
-    ldp x0,  x1,  [sp], #16
-    //寄存器恢复完毕，返回到用户态任务
-    eret
+    mov x10, #0   //offsetof( struct task_struct, cpu_context) 
+    add x8, x0, x10             //&(next->cpu_context)
+    mov x9, sp
+    stp x19, x20, [x8], #16     // store callee-saved registers
+    stp x21, x22, [x8], #16 
+    stp x23, x24, [x8], #16 
+    stp x25, x26, [x8], #16 
+    stp x27, x28, [x8], #16 
+    stp x29, x9, [x8], #16 
+    str x30, [x8]
+    add x8, x1, x10 
+    ldp x19, x20, [x8], #16     // restore callee-saved registers
+    ldp x21, x22, [x8], #16 
+    ldp x23, x24, [x8], #16 
+    ldp x25, x26, [x8], #16 
+    ldp x27, x28, [x8], #16 
+    ldp x29, x9, [x8], #16 
+    ldr x30, [x8]
+    mov sp, x9
+    ret
     .type cpu_switch_to, @function
     .size cpu_switch_to, .-cpu_switch_to
+
+
+
+    .globl  ret_from_fork
+    text_align
+ret_from_fork:
+    bl preempt_enable
+    mov x30, x19
+    ret
+    .type ret_from_fork, @function
+    .size ret_from_fork, .-ret_from_fork
 
 

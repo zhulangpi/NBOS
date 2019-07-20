@@ -1,111 +1,121 @@
 #include "type.h"
+#include "aarch64.h"
 #include "task.h"
 #include "lib.h"
 #include "mm.h"
 #include "syscall.h"
 
-extern void cpu_switch_to( struct task_struct *next );
+
+extern void cpu_switch_to(struct task_struct *prev,  struct task_struct *next );
+extern void ret_from_fork(void);
+extern struct task_struct *init_task;
 
 
 struct task_struct* task_queue[TASK_QUEUE_LENGTH] = {0};
-
 struct task_struct* next = NULL;
 
 
+void preempt_disable(void)
+{
+    current->preempt_count++;
+}
+
+void preempt_enable(void)
+{
+    current->preempt_count--;
+}
 
 //任务切换，运行在A任务的内核栈中，
 //保存A的寄存器组，恢复B的寄存器组，
 //跳转
-void switch_to(struct task_struct *next)
+static void switch_to(struct task_struct *next)
 {
-    while( next->state!=RUNNING ){
-        scheduler_tick();
-    }
+    struct task_struct *prev = current;
+
+    preempt_disable();
+
+    if(current==next || next==NULL||next->state!=TASK_RUNNING)
+        goto out;
+
     //切换寄存器组
-    cpu_switch_to(next);
-
+    cpu_switch_to(prev, next);  //切换到B，返回时是下一次被调度到
+out:
+    preempt_enable();
 }
 
-//任务数据结构的初始化
-//初始化完毕就可以参与调度，直接运行了
-void task_init( struct task_struct *p, void (*main)(void) )
+
+//从任务队列中选择一个状态为RUNNING的任务
+static void select_next_task()
 {
-    //分配用户栈
-    p->cpu_context.sp = (unsigned long)kmalloc(USER_STACK_SZ);
-    if(p->cpu_context.sp==(unsigned long)NULL){
-        puts("user stack malloc failed\n");
-        while(1);
+    int i=0;
+    preempt_disable();
+    for(i=0; i<TASK_QUEUE_LENGTH; i++){
+
+        if( task_queue[i] && (task_queue[i]->state == TASK_RUNNING ) && (current!=task_queue[i]) ){
+            next = task_queue[i];
+            break;
+        }
     }
-    //满递减栈
-    p->cpu_context.sp += USER_STACK_SZ;
-    //设置主函数
-    p->main = main;
-    //设置寄存器组初值
-    p->cpu_context.pc = (unsigned long)main;
-
-
+    preempt_enable();
 }
+
+
+//周期调度器，选择下一个任务并抢占当前任务
+void scheduler_tick(void)
+{
+
+    if(current->preempt_count>0){
+       return;
+    }
+
+    select_next_task();
+
+    enable_irq();
+    switch_to(next);    //这里开中断，为了切换为任务B后能正常运行，正常接受中断，下次再调度到A时，回到中断，需要恢复关中断
+    disable_irq();
+}
+
+//主调度器，主动发起调度和切换
+void schedule()
+{
+    select_next_task();
+    switch_to(next);
+}
+
 
 //将任务p添加到任务队列
-void task_add(struct task_struct *p)
+static void task_add(struct task_struct *p)
 {
     int i =0;
 
     for(i=0; i< TASK_QUEUE_LENGTH; i++ ){
-        if( task_queue[i] == p ){
-            next = p;
-            return;     //已在队列中
-        }
-    }
-
-    for(i=0; i< TASK_QUEUE_LENGTH; i++ ){
-        if( (task_queue[i]==NULL) || (task_queue[i]->state==DEAD) ){
+        if( (task_queue[i]==NULL) || (task_queue[i]->state==TASK_DEAD) ){
             task_queue[i] = p;
-            p->state = RUNNING;
+            p->state = TASK_RUNNING;
             next = p;
             puts("add success\n");
-            return ;
+            return;
         }
-
     }
+
     if(i==TASK_QUEUE_LENGTH){
         puts("task add failed! task queue full!\n");
         while(1);
     }
-
 }
 
-//周期调度器
-//从任务队列中选择一个状态为RUNNING的任务
-void scheduler_tick(void)
+void copy_process(void (*main)(void))
 {
-    int i = 0;
-    static int idx = 0 ;
+    struct task_struct* p = NULL;
 
-   // puts("schelude\n");
+    preempt_disable();
+    p = (struct task_struct*)get_free_page(); 
 
-    for(i=0; i<TASK_QUEUE_LENGTH; i++){
-        idx++;
-        if(idx == TASK_QUEUE_LENGTH)
-            idx = 0;
+    p->cpu_context.x19 = (unsigned long)main;
+    p->cpu_context.sp = (unsigned long)p + STACK_SZ;
+    p->cpu_context.pc = (unsigned long)ret_from_fork;
+    p->preempt_count = 1;
 
-        if( task_queue[idx]->state == RUNNING ){
-            next = task_queue[idx];
-            break;
-        }
-    }
-
+    task_add(p);
+    preempt_enable();
 }
-
-//主调度器
-//调度执行，只在异常返回用户态时才允许调用
-void schedule()
-{
-    while( next->state!=RUNNING ){
-        scheduler_tick();
-    }
-    //切换寄存器组
-    switch_to(next);
-
-}
-

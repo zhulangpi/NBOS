@@ -17,8 +17,8 @@ void irq_dispatch()
         goto restore_irq_out;
     }
 
-    gicd_disable_int(irq);          /* Mask this irq */
-    gic_v3_eoi(irq);                /* Send EOI for this irq line */
+//    gicd_disable_int(irq);          /* Mask this irq */
+ //   gic_v3_eoi(irq);                /* Send EOI for this irq line */
 
     switch(irq){
         case TIMER_IRQ:
@@ -28,7 +28,7 @@ void irq_dispatch()
             break;
     }
 
-    gicd_enable_int(irq);           /* unmask this irq line */
+  //  gicd_enable_int(irq);           /* unmask this irq line */
 
 restore_irq_out:
     enable_irq();
@@ -37,15 +37,12 @@ restore_irq_out:
 
 void exception_dispatch(unsigned int esr_el1)
 {
-    unsigned int ec = esr_el1&ESR_EC_MASK, iss = esr_el1&ESR_ISS_MASK;
+    unsigned int ec = esr_el1&ESR_EC_MASK;// iss = esr_el1&ESR_ISS_MASK;
     
-    (void)iss;
-    if(ec == ESR_EC_SVC){//系统调用
+    if(ec == ESR_EC_SVC){   //系统调用
         int syscall_no = esr_el1&ESR_SVC_IMM16_MASK;
         syscall_dispatch(syscall_no);
     }
-
-
 
 }
 
@@ -55,6 +52,6 @@ void put_exception(unsigned long no)
     puts("enter exception ");
     putlu(no);
     puts("\n");
-
+    while(1);
 }
 

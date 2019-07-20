@@ -9,25 +9,25 @@ const unsigned long pages_start = (unsigned long)&__pages_start;
 const unsigned long pages_end = (unsigned long)&__pages_end;
 
 
+static unsigned short mem_map [ PAGING_PAGES ] = {0,};
 
-char *pheap = NULL;
-
-void init_mm(void)
+unsigned long kmalloc(unsigned long size)
 {
-    pheap = (char*)pages_start;
+    return 0;
 }
 
-
-void* kmalloc(unsigned long size)
+unsigned long get_free_page()
 {
-    void *p = pheap;
-    pheap += size;
-
-    if( !p || ((unsigned long)pheap > pages_end) )
-        return NULL;
-
-    return p;
+    for (int i = 0; i < PAGING_PAGES; i++){
+        if (mem_map[i] == 0){
+            mem_map[i] = 1;
+            return MEM_BASE + LOW_MEMORY + i*PAGE_SIZE;
+        }
+    }
+    return 0;
 }
 
-
+void free_page(unsigned long p){
+    mem_map[p>>PAGE_SHIFT] = 0;
+}
 

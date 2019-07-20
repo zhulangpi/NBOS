@@ -6,7 +6,7 @@
 #include "task.h"
 #include "soft_timer.h"
 
-#define TIMER_PERIOD_MS  50
+#define TIMER_PERIOD_MS  1
 
 unsigned long ticks;
 
@@ -22,16 +22,15 @@ void timer_handler(void)
 	gicd_clear_pending(TIMER_IRQ);
 
 
-    scheduler_tick();
-    walk_timer_list();
-
-
 	// Get value of the current timer
 	current_cnt = raw_read_cntvct_el0();
 	// Set the interrupt in Current Time + TimerTick
 	raw_write_cntv_cval_el0(current_cnt + ticks);
 	// Enable the timer
 	enable_cntv();
+
+
+    scheduler_tick();
 }
 
 void timer_init(void)
@@ -60,7 +59,7 @@ void timer_init(void)
 	enable_cntv();
 
 	// Enable IRQ 
-	enable_irq();
+//	enable_irq();
 
 }
 
