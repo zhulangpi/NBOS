@@ -5,6 +5,7 @@
 #include "timer.h"
 #include "task.h"
 #include "soft_timer.h"
+#include "printf.h"
 
 #define TIMER_PERIOD_MS  1
 
@@ -15,7 +16,7 @@ void timer_handler(void)
 {
     unsigned long current_cnt;
 
-    puts("timer_handler: \n");
+    printf("timer_handler: \n");
 
 	// Disable the timer
 	disable_cntv();

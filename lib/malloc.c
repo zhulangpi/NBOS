@@ -1,5 +1,6 @@
 #include "mm.h"
 #include "lib.h"
+#include "printf.h"
 
 struct bucket_desc {	/* 32 bytes */
 	void			*page;
@@ -35,7 +36,7 @@ static inline void init_bucket_desc()
 	
 	first = bdesc = (struct bucket_desc *) get_free_page();
 	if (!bdesc)
-		puts("Out of memory in init_bucket_desc()\n");
+		printf("Out of memory in init_bucket_desc()\n");
 	for (i = PAGE_SIZE/sizeof(struct bucket_desc); i > 1; i--) {
 		bdesc->next = bdesc+1;
 		bdesc++;
@@ -64,7 +65,7 @@ void *kmalloc(unsigned int len)
 
 	if (!bdir->size) {
 		//printk("malloc called with impossibly large argument (%d)\n",len);
-		puts("malloc: bad arg\n");
+		printf("malloc: bad arg\n");
 	}
 	/*
 	 * Now we search for a bucket descriptor which has free space
@@ -89,7 +90,7 @@ void *kmalloc(unsigned int len)
 		bdesc->bucket_size = bdir->size;
 		bdesc->page = bdesc->freeptr = (void *) (cp = (char*)get_free_page());
 		if (!cp)
-			puts("Out of memory in kernel malloc()\n");
+			printf("Out of memory in kernel malloc()\n");
 		/* Set up the chain of free objects */
 		for (i=PAGE_SIZE/bdir->size; i > 1; i--) {
 			*((char **) cp) = cp + bdir->size;
@@ -126,7 +127,7 @@ void free_s(void *obj, int size)
 			prev = bdesc;
 		}
 	}
-	puts("Bad address passed to kernel free_s()\n");
+	printf("Bad address passed to kernel free_s()\n");
 found:
 	//cli(); /* To avoid race conditions */
 	*((void **)obj) = bdesc->freeptr;
@@ -146,7 +147,7 @@ found:
 			prev->next = bdesc->next;
 		else {
 			if (bdir->chain != bdesc)
-				puts("malloc bucket chains corrupted\n");
+				printf("malloc bucket chains corrupted\n");
 			bdir->chain = bdesc->next;
 		}
 		free_page((unsigned long) bdesc->page);
@@ -159,23 +160,23 @@ found:
 
 void malloc_test(void)
 {
-	puts("malloc test\n");
+	printf("malloc test\n");
 	int *p = (int *)kmalloc(sizeof(int));
 	int *p1 = (int *)kmalloc(sizeof(int));
-	putlx((long)p);puts("\n");
-	putlx((long)p1);puts("\n");
+    printf("%ld\n", p);
+    printf("%ld\n", p1);
 	free(p);
 	free(p1);
 
 	p = (int *)kmalloc(sizeof(int));
-	putlx((long)p);puts("\n");
+    printf("%ld\n", p);
 	free(p);
 
 	p = (int *)kmalloc(4096);
-	putlx((long)p);puts("\n");
+    printf("%ld\n", p);
 	free(p);
 
 	p = (int *)kmalloc(4096);
-	putlx((long)p);puts("\n");
+    printf("%ld\n", p);
 	free(p);
 }

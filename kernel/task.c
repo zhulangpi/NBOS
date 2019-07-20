@@ -4,7 +4,7 @@
 #include "lib.h"
 #include "mm.h"
 #include "syscall.h"
-
+#include "printf.h"
 
 extern void cpu_switch_to(struct task_struct *prev,  struct task_struct *next );
 extern void ret_from_fork(void);
@@ -93,13 +93,13 @@ static void task_add(struct task_struct *p)
             task_queue[i] = p;
             p->state = TASK_RUNNING;
             next = p;
-            puts("add success\n");
+            printf("add success\n");
             return;
         }
     }
 
     if(i==TASK_QUEUE_LENGTH){
-        puts("task add failed! task queue full!\n");
+        printf("task add failed! task queue full!\n");
         while(1);
     }
 }

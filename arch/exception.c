@@ -5,7 +5,7 @@
 #include "timer.h"
 #include "board.h"
 #include "gic_v3.h"
-
+#include "printf.h"
 
 void irq_dispatch()
 {
@@ -13,7 +13,7 @@ void irq_dispatch()
 
     disable_irq();
     if( gic_v3_find_pending_irq(&irq) == IRQ_NOT_FOUND ){
-        puts("IRQ not found!\n");
+        printf("IRQ not found!\n");
         goto restore_irq_out;
     }
 
@@ -49,9 +49,7 @@ void exception_dispatch(unsigned int esr_el1)
 
 void put_exception(unsigned long no)
 {
-    puts("enter exception ");
-    putlu(no);
-    puts("\n");
+    printf("enter exception %d\n", no);
     while(1);
 }
 

@@ -67,7 +67,7 @@ cpu_switch_to:
     .size cpu_switch_to, .-cpu_switch_to
 
 
-
+//fork出的新的任务的通用代码入口在此，x19存储跳转地址，任务刚创建默认关抢占，在此处打开抢占
     .globl  ret_from_fork
     text_align
 ret_from_fork:

@@ -4,7 +4,7 @@
 #include "lib.h"
 #include "timer.h"
 #include "syscall.h"
-
+#include "printf.h"
 
 char stack_init_task[STACK_SZ] __attribute__((section(".data.init_stack")));
 struct task_struct *init_task = (struct task_struct*)stack_init_task;
@@ -13,8 +13,8 @@ void idle_main(void)
 {
 
     while(1){
-        puts("sadasd\n");
-       // schedule();
+        printf("idle\n");
+//        schedule();
     }
 }
 
@@ -22,8 +22,8 @@ void idle_main(void)
 void task0_main(void)
 {
     while(1){
-        puts("===================\n");
-       // schedule();
+        printf("task0\n");
+//        schedule();
     }
 }
 
@@ -32,13 +32,13 @@ void task0_main(void)
 void init_main()
 {
     disable_irq();
+    init_printf(NULL,putc);
     timer_init();
-
     copy_process(idle_main);
     copy_process(task0_main);
     enable_irq();
     while(1){
-       // schedule();
+//        schedule();
     }
 }
 

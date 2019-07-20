@@ -1,7 +1,7 @@
 #include "mm.h"
 #include "type.h"
 #include "lib.h"
-
+#include "printf.h"
 
 /* heap 物理地址范围 */
 extern signed long __pages_start;
@@ -43,7 +43,7 @@ unsigned long get_free_page(void)
 void free_page(unsigned long addr)
 {
 	if(addr < LOW_MEM || addr > HIGH_MEM)
-		puts("trying to free nonexistent page\n");
+		printf("trying to free nonexistent page\n");
 	mem_map[(addr - LOW_MEM) >> PAGE_SHIFT]._count.counter = 0;
 }
 
