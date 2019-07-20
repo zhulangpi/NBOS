@@ -11,6 +11,7 @@ struct task_struct *init_task = (struct task_struct*)stack_init_task;
 
 void idle_main(void)
 {
+
     while(1){
         puts("sadasd\n");
        // schedule();

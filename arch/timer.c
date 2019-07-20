@@ -21,7 +21,6 @@ void timer_handler(void)
 	disable_cntv();
 	gicd_clear_pending(TIMER_IRQ);
 
-
 	// Get value of the current timer
 	current_cnt = raw_read_cntvct_el0();
 	// Set the interrupt in Current Time + TimerTick
