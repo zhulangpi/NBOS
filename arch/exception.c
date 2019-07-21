@@ -35,16 +35,6 @@ restore_irq_out:
     return;
 }
 
-void exception_dispatch(unsigned int esr_el1)
-{
-    unsigned int ec = esr_el1&ESR_EC_MASK;// iss = esr_el1&ESR_ISS_MASK;
-    
-    if(ec == ESR_EC_SVC){   //系统调用
-        int syscall_no = esr_el1&ESR_SVC_IMM16_MASK;
-        syscall_dispatch(syscall_no);
-    }
-
-}
 
 
 void put_exception(unsigned long no)

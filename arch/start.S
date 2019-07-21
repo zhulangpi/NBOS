@@ -1,5 +1,6 @@
+#define _ASSEMBLY_
 #include "asm/arm_asm.h"
-
+#include "syscall.h"
 
 /* creates section containing entry code */
     .section CODE_ENTRY, "x"
@@ -41,7 +42,6 @@ _start:
 */
 
     .globl  cpu_switch_to
-    text_align
 cpu_switch_to:
     mov x10, #0   //offsetof( struct task_struct, cpu_context) 
     add x8, x0, x10             //&(next->cpu_context)
@@ -63,18 +63,3 @@ cpu_switch_to:
     ldr x30, [x8]
     mov sp, x9
     ret
-    .type cpu_switch_to, @function
-    .size cpu_switch_to, .-cpu_switch_to
-
-
-//fork出的新的任务的通用代码入口在此，x19存储跳转地址，任务刚创建默认关抢占，在此处打开抢占
-    .globl  ret_from_fork
-    text_align
-ret_from_fork:
-    bl preempt_enable
-    mov x30, x19
-    ret
-    .type ret_from_fork, @function
-    .size ret_from_fork, .-ret_from_fork
-
-

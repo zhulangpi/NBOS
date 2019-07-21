@@ -104,7 +104,7 @@ static void task_add(struct task_struct *p)
     }
 }
 
-void copy_process(void (*main)(void))
+void copy_process(unsigned long flags, void (*main)(void))
 {
     struct task_struct* p = NULL;
 
@@ -114,8 +114,42 @@ void copy_process(void (*main)(void))
     p->cpu_context.x19 = (unsigned long)main;
     p->cpu_context.sp = (unsigned long)p + STACK_SZ;
     p->cpu_context.pc = (unsigned long)ret_from_fork;
-    p->preempt_count = 1;
+    p->preempt_count = 0;
+
+    if(flags==USER_PROCESS){    //新进程是用户进程，准备用户空间数据
+        struct pt_regs* new = (struct pt_regs*)((unsigned long)p + STACK_SZ - sizeof(struct pt_regs));
+        p->cpu_context.x19 = 0;
+        p->cpu_context.sp = (unsigned long)new;    //保留异常返回的空间
+        //分配用户态栈
+        new->sp = (unsigned long)get_free_page() + USER_STACK_SZ;
+        new->pc = (unsigned long)main;
+        new->spsr = PSR_MODE_EL0t;      //使得eret能够返回到el0
+    }
+
 
     task_add(p);
     preempt_enable();
 }
+
+
+
+
+//任务准备结束自己
+void delete_self()
+{
+    int i=0;
+
+    for(i=0;i<TASK_QUEUE_LENGTH;i++){
+        if(task_queue[i] == current){
+            task_queue[i]->state = TASK_DEAD;
+            break;
+        }
+    }
+    free_page((unsigned long)current);
+    schedule();
+}
+
+
+
+
+
