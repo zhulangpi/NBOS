@@ -241,3 +241,37 @@ _lower_el_aarch32_serror:
     mov x0, #15
     bl   put_exception
 
+
+/*
+    任务A总是在内核态切换为任务B，切换是一个子函数，子函数返回时，只需要恢复x19-x29，x30(lr)，因此只需要保存这些再加上sp
+   
+    下一次调度到A时，就是恢复x19-x30,sp，就可以返回到调用cpu_switch_to的函数f，f是使用A的内核栈的内核代码
+ 
+    sp_el0的保存恢复由对应任务的陷入内核的异常来保存，因为这些寄存器是恢复异常时需要的
+
+    所以任务切换是在内核处理途中插入代码完成的，而不是必须在内核返回到用户态时进行的
+*/
+
+    .globl  cpu_switch_to
+cpu_switch_to:
+    mov x10, #0   //offsetof( struct task_struct, cpu_context) 
+    add x8, x0, x10             //&(next->cpu_context)
+    mov x9, sp
+    stp x19, x20, [x8], #16     // store callee-saved registers
+    stp x21, x22, [x8], #16 
+    stp x23, x24, [x8], #16 
+    stp x25, x26, [x8], #16 
+    stp x27, x28, [x8], #16 
+    stp x29, x9, [x8], #16 
+    str x30, [x8]
+    add x8, x1, x10 
+    ldp x19, x20, [x8], #16     // restore callee-saved registers
+    ldp x21, x22, [x8], #16 
+    ldp x23, x24, [x8], #16 
+    ldp x25, x26, [x8], #16 
+    ldp x27, x28, [x8], #16 
+    ldp x29, x9, [x8], #16 
+    ldr x30, [x8]
+    mov sp, x9
+    ret 
+

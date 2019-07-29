@@ -6,8 +6,6 @@
 IMAGE := NBOS.elf
 ROOT := $(shell pwd)
 
-
-#CROSS_COMPILE = aarch64-linux-gnu-
 CROSS_COMPILE = aarch64-elf-
 
 AS = $(CROSS_COMPILE)gcc
@@ -45,10 +43,9 @@ $(IMAGE): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -T$(LDSCRIPT) -o $(IMAGE)
 	$(OBJDUMP) -d NBOS.elf > NBOS.list
 	$(OBJDUMP) -t NBOS.elf | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > NBOS.sym
-#	$(OBJCOPY) -O binary -S NBOS.elf NBOS.bin
+	$(OBJCOPY) -O binary -S NBOS.elf NBOS.bin
 
 %.o : %.S
-#	$(AS) $(AFLAGS) $< -o $@
 	$(CC) $(CFLAGS) $< -c -o $@     # for include header file in assembly
 
 %.o : %.c
@@ -80,7 +77,7 @@ qemu_cmd_args = \
         $(cpu_config) \
         -nographic \
         -serial mon:stdio \
-        -kernel NBOS.elf
+        -kernel NBOS.bin
 
 
 run: $(IMAGE)

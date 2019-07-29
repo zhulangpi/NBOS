@@ -1,8 +1,9 @@
 #ifndef _MM_H_
 #define _MM_H_
 
+#ifndef _ASSEMBLY_
 #include "type.h"
-
+#endif
 
 #define PAGE_SHIFT              12
 #define PAGE_SIZE               (1 << PAGE_SHIFT)
@@ -18,13 +19,22 @@
 #define USED 100
 
 
+#define KERNEL_VA_START      (0xffff000000000000)
+#define PGD_SHIFT           (39)
+#define PUD_SHIFT           (30)
+#define PMD_SHIFT           (21)
+#define PTE_SHIFT           (12)
+#define TABLE_MASK          ((1<<TABLE_SHIFT)-1)
+#define SECTION_MASK        ((1<<SECTION_SHIFT)-1)
 
+
+#ifndef _ASSEMBLY_
 struct page {
 	atomic_t _count;	/* Usage count */
 };
 
-
-
 extern unsigned long get_free_page(void);
 extern void free_page(unsigned long p); 
+#endif
+
 #endif
