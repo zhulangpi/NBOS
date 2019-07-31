@@ -39,14 +39,15 @@ void init_main()
     putc(NULL, 'a');
     disable_irq();
     init_printf(NULL,putc);
-    timer_init();
+//    timer_init();
 //    copy_process(KERNEL_THREAD, idle_main);
     copy_process(USER_PROCESS, idle_main);
 //    copy_process(USER_PROCESS, task0_main);
 
-    enable_irq();
+//    enable_irq();
     while(1){
-        schedule();
+//        schedule();
+        putc(NULL, 'a');
     }
 }
 

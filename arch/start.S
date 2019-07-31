@@ -58,6 +58,8 @@ _start:
 
     adrp    x0,  pg_tbl_start    //pc 相对寻址，获得物理地址，此时MMU还没开
     msr ttbr1_el1, x0
+//    adrp    x0,  pg_tbl_start    //pc 相对寻址，获得物理地址，此时MMU还没开
+//    msr ttbr0_el1, x0
 
     ldr x0, =(TCR_VALUE)    
     msr tcr_el1, x0
@@ -74,15 +76,34 @@ _start:
     mov sp, x0                  //sp_el1
 
     ldr x2, =init_main          //x2 获得链接地址
-//    ldr x3, =log
+    ldr x3, =log
 
-    ldr  x10, =0xffff00003fc00000
-    mov x0, #SCTLR_MMU_ENABLED
+    ldr x10, =0xffff00003fc00000
+
+//    ldr x20, =SCTLR_VALUE_MMU_DISABLED
+
+    mrs x0, s3_1_c15_c2_1
+    orr x0, x0, #(0x1<<6)       //cpuectlr.smpen = 1
+    msr s3_1_c15_c2_1, x0
+    mrs x0, sctlr_el1
+//    orr x0, x0, #(0x1 << 2)       // D bit, dcache
+//    orr x0, x0, #(0x1 << 12)      // I bit, icache
+    orr x0, x0, #1              // M bit, mmu
     msr sctlr_el1, x0
+//    dsb sy
+//    isb
+
+
+//    sub x0, x0, #1
+//    msr sctlr_el1, x20
+
+//    mov  x30, 0x30080000
+//    ret
 
     mov  x20, #0xa5
     str  x20, [x10] 
+
     br x3
-    br  x2
+    br x2
 
 

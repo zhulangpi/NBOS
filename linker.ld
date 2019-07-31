@@ -2,7 +2,7 @@
 ENTRY(_start)
 SECTIONS
 {
-	. = 0xffff000000000000;
+	. = 0xffff000000080000;
 /*    .start : { start.o(.text)  }  */
 	.text : { 
         arch/start.o  (CODE_ENTRY) 
