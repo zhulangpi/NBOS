@@ -15,7 +15,9 @@ _start:
     ldr x0, =SCTLR_VALUE_MMU_DISABLED
     msr sctlr_el1, x0
 
-    // MMU
+/* 
+    MMU kernel map
+*/
     // 在内存中创建页表， PGD一项， PUD一项，PMD 512项（每项2MB），各级各占用一页
     mov  x0, #KERNEL_VA_START   // x0  VA
     adrp x1, pg_tbl_start       // x1  PA for PGD base
@@ -55,11 +57,48 @@ _start:
     add  x12, x3,  x9
     str  x10, [x12]
 
+/*
+    MMU DRAM map
+*/
+    mov  x0, #MEM_BASE
+    adrp x1, ram_tbl_start      // x1  PA for PGD base
+    add  x2, x1, #PAGE_SIZE     // x2  PA for PUD base
+    add  x3, x2, #PAGE_SIZE     // x3  PA for PMD base
 
+    add  x4, x1, #0             // x4  PA for PGD entry
+    add  x5, x2, #8             // x5  PA for PUD entry, second entry
+    //populate second PGD, 1G-2G
+    orr  x6, x2, #MM_TYPE_PAGE_TABLE
+    str  x6, [x4]               // populate PGD entry
+    //populate first PUD
+    orr  x6, x3, #MM_TYPE_PAGE_TABLE
+    str  x6, [x5]               // populate PUD entry
+    //populate 1 PMD, map 0x4000 0000 - 0x4020 0000(DRAM) to 0x4000 0000 - 0x4020 0000(VA)
+    mov  x6, #MEM_BASE          // x6  PA base
+    mov  x7, #0                 // offset of VA/PA
+    mov  x8, #0                 // index of PMD
+1:
+    lsl  x9, x8, #3             // offset of PMD
+    add  x10, x6, x7            // PA
+    mov  x11, #MMU_FLAGS
+    orr  x10, x10, x11          // PME
+    add  x12, x3, x9
+    str  x10, [x12]
+
+    add  x7, x7, #SECTION_SIZE  // offset of PA
+    add  x8, x8, #1
+    cmp  x8, #0                 // 1>0 则跳转
+    b.ls    1b                  // <=
+
+
+
+/*
+    config MMU
+*/
     adrp    x0,  pg_tbl_start    //pc 相对寻址，获得物理地址，此时MMU还没开
     msr ttbr1_el1, x0
-//    adrp    x0,  pg_tbl_start    //pc 相对寻址，获得物理地址，此时MMU还没开
-//    msr ttbr0_el1, x0
+    adrp    x0,  ram_tbl_start    //pc 相对寻址，获得物理地址，此时MMU还没开
+    msr ttbr0_el1, x0
 
     ldr x0, =(TCR_VALUE)    
     msr tcr_el1, x0
@@ -76,11 +115,6 @@ _start:
     mov sp, x0                  //sp_el1
 
     ldr x2, =init_main          //x2 获得链接地址
-    ldr x3, =log
-
-    ldr x10, =0xffff00003fc00000
-
-//    ldr x20, =SCTLR_VALUE_MMU_DISABLED
 
     mrs x0, s3_1_c15_c2_1
     orr x0, x0, #(0x1<<6)       //cpuectlr.smpen = 1
@@ -93,17 +127,4 @@ _start:
 //    dsb sy
 //    isb
 
-
-//    sub x0, x0, #1
-//    msr sctlr_el1, x20
-
-//    mov  x30, 0x30080000
-//    ret
-
-    mov  x20, #0xa5
-    str  x20, [x10] 
-
-    br x3
     br x2
-
-

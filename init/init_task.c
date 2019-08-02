@@ -41,7 +41,7 @@ void init_main()
     init_printf(NULL,putc);
 //    timer_init();
 //    copy_process(KERNEL_THREAD, idle_main);
-    copy_process(USER_PROCESS, idle_main);
+//    copy_process(USER_PROCESS, idle_main);
 //    copy_process(USER_PROCESS, task0_main);
 
 //    enable_irq();

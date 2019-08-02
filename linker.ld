@@ -22,10 +22,16 @@ SECTIONS
         *(.rodata)
     }
     . = ALIGN(4096);
-    pg_tbl_start = .;   /* 存放内核页表 */  /* PA: 0x40086000 */
+    pg_tbl_start = .;   /* 存放内核页表 */  /* PA: 0x4008 6000 */
 
     . += 3*4096 ;
     pg_tbl_end = .;
+
+
+    ram_tbl_start = .;  /* 建立DRAM的1:1映射 */  /* PA: 0x4008 9000 */
+
+    . += 3*4096;
+    ram_tbl_end = .;
 
 	.bss : { *(.bss COMMON) }
 
