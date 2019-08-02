@@ -1,6 +1,9 @@
 #define _ASSEMBLY_
 #include "asm/arm_asm.h"
 #include "syscall.h"
+#include "mmu.h"
+#include "mm.h"
+#include "aarch64.h"
 
 /* creates section containing entry code */
     .section CODE_ENTRY, "x"
@@ -8,58 +11,120 @@
     .globl  _start
     text_align
 _start:
-    //MMU
-//    ldr x1, =0x3520 //4GB空间 4KB粒度 Inner-shareable
-//    msr tcr_el1, x1
 
-//    ldr x1, =0xffffffff
-//    msr mair_el1, x1
+    ldr x0, =SCTLR_VALUE_MMU_DISABLED
+    msr sctlr_el1, x0
 
-//    adr x0, ttb0_base
-//    msr ttbr0_el1, x0
+/* 
+    MMU kernel map
+*/
+    // 在内存中创建页表， PGD一项， PUD一项，PMD 512项（每项2MB），各级各占用一页
+    mov  x0, #KERNEL_VA_START   // x0  VA
+    adrp x1, pg_tbl_start       // x1  PA for PGD base
+    add  x2, x1, #PAGE_SIZE     // x2  PA for PUD base
+    add  x3, x2, #PAGE_SIZE     // x3  PA for PMD base
 
+    add  x4, x1, #0             // x4  PA for PGD entry
+    add  x5, x2, #0             // x5  PA for PUD entry
+    //populate first PGD
+    orr  x6, x2, #MM_TYPE_PAGE_TABLE
+    str  x6, [x4]               // populate PGD entry
+    //populate first PUD
+    orr  x6, x3, #MM_TYPE_PAGE_TABLE
+    str  x6, [x5]               // populate PUD entry
+    //populate 512 PMD
+    mov  x6, #MEM_BASE          // x6  PA base
+    mov  x7, #0                 // offset of VA/PA
+    mov  x8, #0                 // index of PMD
+1:
+    lsl  x9, x8, #3             // offset of PMD
+    add  x10, x6, x7            // PA
+    mov  x11, #MMU_FLAGS
+    orr  x10, x10, x11          // PME
+    add  x12, x3, x9
+    str  x10, [x12]
 
-    //Initialize VBAR_EL1
-    ldr x0, =vector_table_el1
-    msr vbar_el1,   x0
+    add  x7, x7, #SECTION_SIZE  // offset of PA
+    add  x8, x8, #1
+    cmp  x8, #509               // 510>509则跳转，511、512table 给 中断控制器和串口控制器
+    b.ls    1b                  // <=
 
-    /* configure init kernel task stack */
-    adrp    x0, __init_stack_top
-    mov     sp, x0          //sp_el1
+//UART REG，511号table，对应VA = VA_START + (511-1) * 2 * 1024 * 1024
+    lsl  x9, x8, #3
+    mov  x10, #0x9000000
+    mov  x11, #MMU_DEVICE_FLAGS
+    orr  x10, x10, x11
+    add  x12, x3,  x9
+    str  x10, [x12]
 
-    b       init_main
+/*
+    MMU DRAM map
+*/
+    mov  x0, #MEM_BASE
+    adrp x1, ram_tbl_start      // x1  PA for PGD base
+    add  x2, x1, #PAGE_SIZE     // x2  PA for PUD base
+    add  x3, x2, #PAGE_SIZE     // x3  PA for PMD base
+
+    add  x4, x1, #0             // x4  PA for PGD entry
+    add  x5, x2, #8             // x5  PA for PUD entry, second entry
+    //populate second PGD, 1G-2G
+    orr  x6, x2, #MM_TYPE_PAGE_TABLE
+    str  x6, [x4]               // populate PGD entry
+    //populate first PUD
+    orr  x6, x3, #MM_TYPE_PAGE_TABLE
+    str  x6, [x5]               // populate PUD entry
+    //populate 1 PMD, map 0x4000 0000 - 0x4020 0000(DRAM) to 0x4000 0000 - 0x4020 0000(VA)
+    mov  x6, #MEM_BASE          // x6  PA base
+    mov  x7, #0                 // offset of VA/PA
+    mov  x8, #0                 // index of PMD
+1:
+    lsl  x9, x8, #3             // offset of PMD
+    add  x10, x6, x7            // PA
+    mov  x11, #MMU_FLAGS
+    orr  x10, x10, x11          // PME
+    add  x12, x3, x9
+    str  x10, [x12]
+
+    add  x7, x7, #SECTION_SIZE  // offset of PA
+    add  x8, x8, #1
+    cmp  x8, #0                 // 1>0 则跳转
+    b.ls    1b                  // <=
 
 
 
 /*
-    任务A总是在内核态切换为任务B，切换是一个子函数，子函数返回时，只需要恢复x19-x29，x30(lr)，因此只需要保存这些再加上sp
-   
-    下一次调度到A时，就是恢复x19-x30,sp，就可以返回到调用cpu_switch_to的函数f，f是使用A的内核栈的内核代码
- 
-    sp_el0的保存恢复由对应任务的陷入内核的异常来保存，因为这些寄存器是恢复异常时需要的
-
-    所以任务切换是在内核处理途中插入代码完成的，而不是必须在内核返回到用户态时进行的
+    config MMU
 */
+    adrp    x0,  pg_tbl_start    //pc 相对寻址，获得物理地址，此时MMU还没开
+    msr ttbr1_el1, x0
+    adrp    x0,  ram_tbl_start    //pc 相对寻址，获得物理地址，此时MMU还没开
+    msr ttbr0_el1, x0
 
-    .globl  cpu_switch_to
-cpu_switch_to:
-    mov x10, #0   //offsetof( struct task_struct, cpu_context) 
-    add x8, x0, x10             //&(next->cpu_context)
-    mov x9, sp
-    stp x19, x20, [x8], #16     // store callee-saved registers
-    stp x21, x22, [x8], #16 
-    stp x23, x24, [x8], #16 
-    stp x25, x26, [x8], #16 
-    stp x27, x28, [x8], #16 
-    stp x29, x9, [x8], #16 
-    str x30, [x8]
-    add x8, x1, x10 
-    ldp x19, x20, [x8], #16     // restore callee-saved registers
-    ldp x21, x22, [x8], #16 
-    ldp x23, x24, [x8], #16 
-    ldp x25, x26, [x8], #16 
-    ldp x27, x28, [x8], #16 
-    ldp x29, x9, [x8], #16 
-    ldr x30, [x8]
-    mov sp, x9
-    ret
+    ldr x0, =(TCR_VALUE)    
+    msr tcr_el1, x0
+
+    ldr x0, =(MAIR_VALUE)
+    msr mair_el1, x0
+
+    //Initialize VBAR_EL1
+    ldr x0, =vector_table_el1   //x2 获得链接地址
+    msr vbar_el1,   x0
+
+    /* configure init kernel task stack */
+    ldr x0, =__init_stack_top
+    mov sp, x0                  //sp_el1
+
+    ldr x2, =init_main          //x2 获得链接地址
+
+    mrs x0, s3_1_c15_c2_1
+    orr x0, x0, #(0x1<<6)       //cpuectlr.smpen = 1
+    msr s3_1_c15_c2_1, x0
+    mrs x0, sctlr_el1
+//    orr x0, x0, #(0x1 << 2)       // D bit, dcache
+//    orr x0, x0, #(0x1 << 12)      // I bit, icache
+    orr x0, x0, #1              // M bit, mmu
+    msr sctlr_el1, x0
+//    dsb sy
+//    isb
+
+    br x2

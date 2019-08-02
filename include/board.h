@@ -34,7 +34,8 @@
 
 #define TIMER_IRQ					(27)  /** Timer IRQ  */
 
-#define UART_BASE   (0X9000000)   
+//#define UART_BASE   (0x09000000)   
+#define UART_BASE   (0xffff00003fc00000)   
 #define UART_DATA   (*(volatile unsigned long*)(UART_BASE))
 
 #endif  /* _BOARD_H */

@@ -27,4 +27,12 @@ void putc(void *p,  char c)
     UART_DATA = c;
 }
 
-
+void log(void)
+{
+    putc(NULL,'#');
+    putc(NULL,'#');
+    putc(NULL,'#');
+    putc(NULL,'#');
+    putc(NULL,'#');
+    putc(NULL,'\n');
+}

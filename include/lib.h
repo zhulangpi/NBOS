@@ -8,5 +8,5 @@ extern void putc(void* p, char c);
 extern void *kmalloc(unsigned int len);
 extern void free_s(void *obj, int size);
 extern void malloc_test(void);
-
+extern void log(void);
 #endif
