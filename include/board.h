@@ -12,7 +12,8 @@
 /*
  * GIC on QEMU Virt 
  */
-#define QEMU_VIRT_GIC_BASE			(0x08000000)
+#define QEMU_VIRT_GIC_PA_BASE	    (0x08000000)
+#define QEMU_VIRT_GIC_BASE			(0xffff00003fe00000)
 #define QEMU_VIRT_GIC_INT_MAX		(64)
 #define QEMU_VIRT_GIC_PRIO_MAX		(16)
 /* SGI: Interrupt IDs 0-15 */
@@ -34,8 +35,8 @@
 
 #define TIMER_IRQ					(27)  /** Timer IRQ  */
 
-//#define UART_BASE   (0x09000000)   
-#define UART_BASE   (0xffff00003fc00000)   
-#define UART_DATA   (*(volatile unsigned long*)(UART_BASE))
+#define UART_PA_BASE                (0x09000000)
+#define UART_BASE                   (0xffff00003fc00000)   
+#define UART_DATA                   (*(volatile unsigned long*)(UART_BASE))
 
 #endif  /* _BOARD_H */

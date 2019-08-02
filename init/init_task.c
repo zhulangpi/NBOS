@@ -15,9 +15,9 @@ void task0_main();
 void idle_main(void)
 {
 
-    call_sys_fork(task0_main);
+//    call_sys_fork(task0_main);
     while(1){
-        call_sys_write("idle\n");
+        //call_sys_write("idle\n");
 //        schedule();
     }
 }
@@ -27,8 +27,8 @@ void task0_main(void)
 {
 
     while(1){
-        //printf("task0\n");
-        call_sys_write("task0\n");
+        printf("task0\n");
+//        call_sys_write("task0\n");
     }
 }
 
@@ -39,15 +39,16 @@ void init_main()
     putc(NULL, 'a');
     disable_irq();
     init_printf(NULL,putc);
-//    timer_init();
+    timer_init();
 //    copy_process(KERNEL_THREAD, idle_main);
 //    copy_process(USER_PROCESS, idle_main);
-//    copy_process(USER_PROCESS, task0_main);
+    copy_process(USER_PROCESS, task0_main);
 
-//    enable_irq();
+    putc(NULL, 'a');
+    enable_irq();
     while(1){
-//        schedule();
-        putc(NULL, 'a');
+ //       schedule();
+ //       putc(NULL, 'a');
     }
 }
 

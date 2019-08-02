@@ -104,12 +104,15 @@ static void task_add(struct task_struct *p)
     }
 }
 
+//just put new task in queue
 void copy_process(unsigned long flags, void (*main)(void))
 {
     struct task_struct* p = NULL;
 
     preempt_disable();
-    p = (struct task_struct*)get_free_page(); 
+    p = (struct task_struct*)get_free_page(GFP_KERNEL); 
+
+    printf("asd\n");
 
     p->cpu_context.x19 = (unsigned long)main;
     p->cpu_context.sp = (unsigned long)p + STACK_SZ;
@@ -121,13 +124,15 @@ void copy_process(unsigned long flags, void (*main)(void))
         p->cpu_context.x19 = 0;
         p->cpu_context.sp = (unsigned long)new;    //保留异常返回的空间
         //分配用户态栈
-        new->sp = (unsigned long)get_free_page() + USER_STACK_SZ;
+        new->sp = (unsigned long)get_free_page(GFP_KERNEL) + USER_STACK_SZ;
         new->pc = (unsigned long)main;
         new->spsr = PSR_MODE_EL0t;      //使得eret能够返回到el0
     }
 
 
+    printf("asd\n");
     task_add(p);
+    printf("asd\n");
     preempt_enable();
 }
 

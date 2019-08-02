@@ -34,12 +34,6 @@ SECTIONS
     ram_tbl_end = .;
 
 	.bss : { *(.bss COMMON) }
-
-    /*. = 0x40100000;*/      /* 1MB */
-    . = ALIGN(4096);    /* 按页对齐，后面的全部按页管理 */
-    __pages_start = .;
-
-    /*. = 0x41000000; */    /* 16MB */
-    __pages_end = .;
+    __img_end = .;
 }
 

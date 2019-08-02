@@ -4,6 +4,7 @@
 #include "mmu.h"
 #include "mm.h"
 #include "aarch64.h"
+#include "board.h"
 
 /* creates section containing entry code */
     .section CODE_ENTRY, "x"
@@ -49,13 +50,24 @@ _start:
     cmp  x8, #509               // 510>509则跳转，511、512table 给 中断控制器和串口控制器
     b.ls    1b                  // <=
 
-//UART REG，511号table，对应VA = VA_START + (511-1) * 2 * 1024 * 1024
+//UART REG，511号entry，对应VA = VA_START + (511-1) * 2 * 1024 * 1024
     lsl  x9, x8, #3
-    mov  x10, #0x9000000
+    mov  x10, #UART_PA_BASE
     mov  x11, #MMU_DEVICE_FLAGS
     orr  x10, x10, x11
     add  x12, x3,  x9
     str  x10, [x12]
+
+//GIC REG, 512号entry，对应VA = VA_START + (512-1)*2*1024*1024
+    add  x8, x8, #1
+    lsl  x9, x8, #3
+    mov  x10, #QEMU_VIRT_GIC_PA_BASE
+    mov  x11, #MMU_DEVICE_FLAGS
+    orr  x10, x10, x11 
+    add  x12, x3,  x9  
+    str  x10, [x12]
+
+
 
 /*
     MMU DRAM map
@@ -77,7 +89,6 @@ _start:
     mov  x6, #MEM_BASE          // x6  PA base
     mov  x7, #0                 // offset of VA/PA
     mov  x8, #0                 // index of PMD
-1:
     lsl  x9, x8, #3             // offset of PMD
     add  x10, x6, x7            // PA
     mov  x11, #MMU_FLAGS
@@ -87,9 +98,6 @@ _start:
 
     add  x7, x7, #SECTION_SIZE  // offset of PA
     add  x8, x8, #1
-    cmp  x8, #0                 // 1>0 则跳转
-    b.ls    1b                  // <=
-
 
 
 /*

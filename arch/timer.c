@@ -7,7 +7,7 @@
 #include "soft_timer.h"
 #include "printf.h"
 
-#define TIMER_PERIOD_MS  1
+#define TIMER_PERIOD_MS  10
 
 unsigned long ticks;
 
