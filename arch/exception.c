@@ -36,7 +36,6 @@ restore_irq_out:
 }
 
 
-
 void put_exception(unsigned long no)
 {
     printf("enter exception %d\n", no);

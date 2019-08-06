@@ -1,8 +1,12 @@
+/*
+    from linux 0.11
+*/
 #include "mm.h"
 #include "lib.h"
 #include "printf.h"
+#include "aarch64.h"
 
-struct bucket_desc {	/* 32 bytes */
+struct bucket_desc {
 	void			*page;
 	struct bucket_desc	*next;
 	void			*freeptr;
@@ -10,7 +14,7 @@ struct bucket_desc {	/* 32 bytes */
 	unsigned short		bucket_size;
 };
 
-struct _bucket_dir {	/* 16 bytes */
+struct _bucket_dir {
 	int			size;
 	struct bucket_desc	*chain;
 };
@@ -70,7 +74,7 @@ void *kmalloc(unsigned int len)
 	/*
 	 * Now we search for a bucket descriptor which has free space
 	 */
-	//cli();	/* Avoid race conditions */
+	disable_irq();	/* Avoid race conditions */
 	for (bdesc = bdir->chain; bdesc; bdesc = bdesc->next) 
 		if (bdesc->freeptr)
 			break;
@@ -103,7 +107,7 @@ void *kmalloc(unsigned int len)
 	retval = (void *) bdesc->freeptr;
 	bdesc->freeptr = *((void **) retval);
 	bdesc->refcnt++;
-	//sti();	/* OK, we're safe again */
+	enable_irq();	/* OK, we're safe again */
 	return(retval);
 }
 
@@ -129,7 +133,7 @@ void free_s(void *obj, int size)
 	}
 	printf("Bad address passed to kernel free_s()\n");
 found:
-	//cli(); /* To avoid race conditions */
+	disable_irq(); /* To avoid race conditions */
 	*((void **)obj) = bdesc->freeptr;
 	bdesc->freeptr = obj;
 	bdesc->refcnt--;
@@ -154,7 +158,7 @@ found:
 		bdesc->next = free_bucket_desc;
 		free_bucket_desc = bdesc;
 	}
-	//sti();
+	enable_irq();
 	return;
 }
 

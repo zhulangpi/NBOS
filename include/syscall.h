@@ -16,9 +16,6 @@ extern void sys_fork();
 extern void sys_malloc();
 extern void sys_exit();
 
-extern void call_sys_write(char *buf);
-extern void call_sys_fork( void (*main)(void) );
-
 #endif
 
 

@@ -18,7 +18,7 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 INC := $(ROOT)/include
 
 
-CFLAGS = -Wall -fno-common -O0 -g \
+CFLAGS = -Wall -fpic -fno-common -O0 \
          -nostdlib -nostartfiles -ffreestanding \
          -march=armv8-a -I$(INC) -mgeneral-regs-only
 
@@ -29,11 +29,11 @@ LDFLAGS = -nostartfiles
 ARCH = arch/aarch64.o arch/gic_v3.o arch/timer.o arch/start.o arch/exception.o arch/vector.o
 INIT = init/init_task.o
 KERNEL = kernel/task.o kernel/syscall.o kernel/soft_timer.o
-MM = mm/mm.o
-LIB = lib/lib.o lib/malloc.o lib/printf.o
+MM = mm/mm.o mm/kmalloc.o
+LIB = lib/lib.o lib/printf.o
+USER = user/process1.o user/sys_user.o user/lib_user.o
 
-
-OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB)
+OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB) $(USER)
 
 LDSCRIPT = linker.ld
 

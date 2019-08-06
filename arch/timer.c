@@ -7,7 +7,7 @@
 #include "soft_timer.h"
 #include "printf.h"
 
-#define TIMER_PERIOD_MS  10
+#define TIMER_PERIOD_MS  100
 
 unsigned long ticks;
 
@@ -28,7 +28,6 @@ void timer_handler(void)
 	raw_write_cntv_cval_el0(current_cnt + ticks);
 	// Enable the timer
 	enable_cntv();
-
 
     scheduler_tick();
 }
@@ -58,8 +57,7 @@ void timer_init(void)
 	// Enable the timer
 	enable_cntv();
 
-	// Enable IRQ 
-//	enable_irq();
+//	disable_irq();
 
 }
 

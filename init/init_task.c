@@ -16,7 +16,9 @@ void idle_main(void)
 {
 
 //    call_sys_fork(task0_main);
+        printf("idle\n");
     while(1){
+//        printf("idle\n");
         //call_sys_write("idle\n");
 //        schedule();
     }
@@ -26,8 +28,9 @@ void idle_main(void)
 void task0_main(void)
 {
 
+//        printf("task0\n");
     while(1){
-        printf("task0\n");
+//        printf("task0\n");
 //        call_sys_write("task0\n");
     }
 }
@@ -36,19 +39,18 @@ void task0_main(void)
 //内核初始化线程，初始化系统后跳转到idle用户态任务
 void init_main()
 {
-    putc(NULL, 'a');
     disable_irq();
-    init_printf(NULL,putc);
+    init_mm();
     timer_init();
-//    copy_process(KERNEL_THREAD, idle_main);
-//    copy_process(USER_PROCESS, idle_main);
-    copy_process(USER_PROCESS, task0_main);
 
-    putc(NULL, 'a');
+//    copy_process(KERNEL_THREAD, idle_main);
+    copy_process(USER_PROCESS, NULL);
+//    copy_process(KERNEL_THREAD, task0_main);
+
+//    disable_irq();
     enable_irq();
     while(1){
- //       schedule();
- //       putc(NULL, 'a');
+//        schedule();
     }
 }
 

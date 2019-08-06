@@ -46,7 +46,7 @@ struct cpu_context {
     unsigned long pc;   //x30(lr)
 };
 
-//在返回到用户态前，准备好用户态的寄存器，用于正确返回
+//在返回到用户态前，在内核栈中准备好用户态的寄存器，用于正确返回
 struct pt_regs{
     unsigned long x[31];    //x0-x30
     unsigned long sp;       //sp_el0  保存用户态栈指针
@@ -60,9 +60,10 @@ struct pt_regs{
 
 /* 任务描述符 */
 struct task_struct{
-    struct cpu_context cpu_context;
+    struct cpu_context cpu_context; //must be the first
     int state;
     unsigned long preempt_count;
+    struct mm_struct *mm;
 };
 
 

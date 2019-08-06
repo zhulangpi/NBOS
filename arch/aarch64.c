@@ -237,3 +237,18 @@ void raw_write_cntv_cval_el0(unsigned long cntv_cval_el0)
 	__asm__ __volatile__("msr CNTV_CVAL_EL0, %0\n\t" : : "r" (cntv_cval_el0) : "memory");
 }
 
+
+
+/*
+    switch ttbr0_el1
+*/
+void switch_mm(unsigned long pgd)
+{
+    __asm__ __volatile__(
+    "msr ttbr0_el1, %0\n\t" 
+    "tlbi vmalle1is\n\t"
+//    "DSB ISH\n\t"              // ensure completion of TLB invalidation
+//    "isb\n\t" 
+    : : "r" (pgd) : "memory");
+}
+

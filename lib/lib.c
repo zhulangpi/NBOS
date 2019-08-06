@@ -12,6 +12,14 @@ void *memset(void *s, int c, unsigned long n)
         return s; 
 }
 
+void memcpy(void *dst, void* src, unsigned long size)
+{
+    int i = 0;
+    for(i=0;i<size;i++){
+        *((char*)dst+i) = *((char*)src+i);
+    }
+}
+
 long pow(long x, unsigned long m)
 {
     long y=1;
@@ -22,10 +30,16 @@ long pow(long x, unsigned long m)
     return y;
 }
 
-void putc(void *p,  char c)
+void putc(void* p,char c)
 {
     UART_DATA = c;
 }
+
+void _putchar(char c)
+{
+    UART_DATA = c;
+}
+
 
 void log(void)
 {

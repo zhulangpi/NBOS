@@ -46,7 +46,7 @@
     .macro kernel_exit, el
 
     .if \el == 0
-    bl schedule
+   // bl schedule
     .endif
 
     ldp x22, x23, [sp, #16 * 16]
@@ -81,18 +81,6 @@
 
 
 
-    .globl  call_sys_write
-    text_align
-call_sys_write:
-    mov x8, #SYS_WRITE
-    svc #0
-    br  x30
-
-    .globl  call_sys_fork
-call_sys_fork:
-    mov x8, #SYS_FORK
-    svc #0
-    br  x30
 
 
     vector_table_align

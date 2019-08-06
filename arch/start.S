@@ -6,9 +6,6 @@
 #include "aarch64.h"
 #include "board.h"
 
-/* creates section containing entry code */
-    .section CODE_ENTRY, "x"
-/* exporting the name to the linker */
     .globl  _start
     text_align
 _start:
