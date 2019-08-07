@@ -7,15 +7,15 @@
 #include "aarch64.h"
 
 struct bucket_desc {
-	void			*page;
+	void			    *page;
 	struct bucket_desc	*next;
-	void			*freeptr;
+	void			    *freeptr;
 	unsigned short		refcnt;
 	unsigned short		bucket_size;
 };
 
 struct _bucket_dir {
-	int			size;
+	int			        size;
 	struct bucket_desc	*chain;
 };
 
@@ -68,8 +68,7 @@ void *kmalloc(unsigned int len)
 			break;
 
 	if (!bdir->size) {
-		//printk("malloc called with impossibly large argument (%d)\n",len);
-		printf("malloc: bad arg\n");
+		printf("malloc called with impossibly large argument (%d)\n",len);
 	}
 	/*
 	 * Now we search for a bucket descriptor which has free space
@@ -83,7 +82,7 @@ void *kmalloc(unsigned int len)
 	 * allocate a new one.
 	 */
 	if (!bdesc) {
-		char		*cp;
+		char    *cp;
 		int		i;
 
 		if (!free_bucket_desc)	
@@ -113,13 +112,13 @@ void *kmalloc(unsigned int len)
 
 void free_s(void *obj, int size)
 {
-	void		*page;
+	void		        *page;
 	struct _bucket_dir	*bdir;
 	struct bucket_desc	*bdesc, *prev;
-    unsigned long   irqflag;
+    unsigned long       irqflag;
 
 	/* Calculate what page this object lives in */
-	page = (void *)  ((unsigned long) obj & 0xfffff000);
+	page = (void*)( (unsigned long)obj &(~( PAGE_SIZE -1)) );
 	/* Now search the buckets looking for that page */
 	for (bdir = bucket_dir; bdir->size; bdir++) {
 		prev = 0;
@@ -155,7 +154,7 @@ found:
 				printf("malloc bucket chains corrupted\n");
 			bdir->chain = bdesc->next;
 		}
-		free_page(__pa(bdesc->page));
+		free_page( bdesc->page );
 		bdesc->next = free_bucket_desc;
 		free_bucket_desc = bdesc;
 	}
@@ -163,25 +162,4 @@ found:
 	return;
 }
 
-void malloc_test(void)
-{
-	printf("malloc test\n");
-	int *p = (int *)kmalloc(sizeof(int));
-	int *p1 = (int *)kmalloc(sizeof(int));
-    printf("%ld\n", p);
-    printf("%ld\n", p1);
-	free(p);
-	free(p1);
 
-	p = (int *)kmalloc(sizeof(int));
-    printf("%ld\n", p);
-	free(p);
-
-	p = (int *)kmalloc(4096);
-    printf("%ld\n", p);
-	free(p);
-
-	p = (int *)kmalloc(4096);
-    printf("%ld\n", p);
-	free(p);
-}

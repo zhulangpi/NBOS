@@ -13,7 +13,7 @@ void sys_write(char *buf)
 
 void sys_fork( void (*main)(void) )
 {
-    copy_process( USER_PROCESS, main);
+    copy_process(USER_PROCESS);
 }
 
 void sys_malloc(void)

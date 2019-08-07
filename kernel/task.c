@@ -111,7 +111,45 @@ extern unsigned long __user_end;
 const unsigned long user_end = (unsigned long)&__user_end;
 
 //just put new task in queue
-void copy_process(unsigned long flags, void (*main)(void))
+void copy_process(unsigned long flags)
+{
+    struct task_struct* p = NULL;
+    struct pt_regs* new = NULL; 
+
+    preempt_disable();
+
+    p = (struct task_struct*)get_free_page(GFP_KERNEL);
+    new = (struct pt_regs*)((unsigned long)p + STACK_SZ - sizeof(struct pt_regs));
+
+    p->cpu_context.pc = (unsigned long)ret_from_fork;
+    p->cpu_context.x19 = 0;
+    p->cpu_context.sp = (unsigned long)new;    //保留异常返回的空间
+    p->preempt_count = 0;
+
+    //分配用户态地址空间
+    p->mm = (struct mm_struct*)kmalloc(sizeof(struct mm_struct));
+    p->mm->pgd = __pa(get_free_page(GFP_KERNEL) );
+    //分配并设置用户态栈
+    alloc_user_pages(USER_MAX - USER_STACK_SZ, USER_STACK_SZ, p->mm);
+    new->sp = USER_MAX;
+    //分配并复制代码
+    alloc_user_pages(USER_START, user_end-user_start, p->mm);
+    new->pc = USER_START;
+    //装载程序到用户空间
+    switch_mm(p->mm->pgd);
+    memcpy( USER_START, (void*)user_start, user_end-user_start );
+    new->spsr = PSR_MODE_EL0t;      //使得eret能够返回到el0
+
+    task_add(p);
+    preempt_enable();
+
+    print_process_page(p->mm);
+
+}
+
+
+//just put new task in queue
+void kthread_create(void (*main)(void))
 {
     struct task_struct* p = NULL;
 
@@ -123,43 +161,41 @@ void copy_process(unsigned long flags, void (*main)(void))
     p->cpu_context.pc = (unsigned long)ret_from_fork;
     p->preempt_count = 0;
 
-    if(flags==USER_PROCESS){    //新进程是用户进程，准备用户空间数据
-        struct pt_regs* new = (struct pt_regs*)((unsigned long)p + STACK_SZ - sizeof(struct pt_regs));
-        p->cpu_context.x19 = 0;
-        p->cpu_context.sp = (unsigned long)new;    //保留异常返回的空间
-        //分配用户态地址空间
-        p->mm = (struct mm_struct*)kmalloc(sizeof(struct mm_struct));
-        p->mm->pgd = __pa(get_free_page(GFP_KERNEL) );
-        //分配并设置用户态栈
-        alloc_user_pages(USER_MAX - USER_STACK_SZ, USER_STACK_SZ, p->mm);
-        new->sp = USER_MAX;
-        //分配并复制代码
-        alloc_user_pages(USER_START, user_end-user_start, p->mm);
-        new->pc = USER_START;
-        //装载程序到用户空间
-        switch_mm(p->mm->pgd);
-        memcpy( USER_START, (void*)user_start, user_end-user_start );
-        new->spsr = PSR_MODE_EL0t;      //使得eret能够返回到el0
-    }
-
     task_add(p);
     preempt_enable();
 }
 
-
-//任务准备结束自己
-void delete_self()
+//删除进程
+void delete_process(struct task_struct* p)
 {
     int i=0;
 
     for(i=0;i<TASK_QUEUE_LENGTH;i++){
-        if(task_queue[i] == current){
+        if(task_queue[i] == p){
             task_queue[i]->state = TASK_DEAD;
             break;
         }
     }
-    free_page((unsigned long)current);
-    schedule();
+    //释放用户空间映射的页
+    for(i=0;i<MAX_USER_PAGES;i++){
+        unsigned long pa = p->mm->vma[i].pa;
+        if(pa!=0){
+            free_page( __va(pa));
+        }else{
+            break;
+        }
+    }
+
+    //TODO: 释放进程页表
+    for(i=0;i<MAX_PGTBL_PAGES; i++){
+        void* va = p->mm->pgtbl_page[i];
+        if(va!=NULL){
+            free_page(va);
+        }
+    }
+
+    //释放内核栈及任务描述符
+    free_page(p);
 }
 
 

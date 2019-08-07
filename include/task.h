@@ -23,7 +23,6 @@
 #define PSR_MODE_EL3h   0x0000000d
 
 
-
 //任务状态定义
 #define TASK_DEAD    0   //任务刚创建或任务被杀死
 #define TASK_RUNNING 1   //任务可以运行
@@ -61,8 +60,8 @@ struct pt_regs{
 /* 任务描述符 */
 struct task_struct{
     struct cpu_context cpu_context; //must be the first position
-    int PID;
-    int priority;
+//    int PID;
+//    int priority;
     int state;
     unsigned long preempt_count;
     struct mm_struct *mm;
@@ -82,11 +81,10 @@ static __always_inline struct task_struct *get_current(void)
 
 #define current get_current()
 
-
-
 extern void preempt_disable(void);
 extern void preempt_enable(void);
-extern void copy_process(unsigned long flags, void (*main)(void) );
+extern void copy_process(unsigned long flags);
+extern void kthread_create(void (*main)(void));
 extern void schedule(void);
 extern void scheduler_tick(void);
 
