@@ -10,9 +10,10 @@ typedef struct{
 
 __always_inline void atomic_set(atomic_t* v, int i)
 {
-    disable_irq();
+    unsigned long flag;
+    disable_irqsave(&flag);
     v->counter = i;
-    enable_irq();
+    enable_irqsave(flag);
 }
 
 __always_inline int atomic_read(atomic_t* v)
@@ -22,9 +23,10 @@ __always_inline int atomic_read(atomic_t* v)
 
 __always_inline void atomic_add(int i, atomic_t* v)
 {
-    disable_irq();
+    unsigned long flag;
+    disable_irqsave(&flag);
     v->counter += i;
-    enable_irq();
+    enable_irqsave(flag);
 }
 
 

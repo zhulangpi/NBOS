@@ -60,7 +60,9 @@ struct pt_regs{
 
 /* 任务描述符 */
 struct task_struct{
-    struct cpu_context cpu_context; //must be the first
+    struct cpu_context cpu_context; //must be the first position
+    int PID;
+    int priority;
     int state;
     unsigned long preempt_count;
     struct mm_struct *mm;

@@ -38,7 +38,7 @@ static void switch_to(struct task_struct *next)
     if(current==next || next==NULL||next->state!=TASK_RUNNING)
         goto out;
 
-    printf("prev 0x%x switch to next 0x%x\n", prev, next);
+    switch_mm(next->mm->pgd);
     //切换寄存器组
     cpu_switch_to(prev, next);  //切换到B，返回时是下一次被调度到
 out:
@@ -110,16 +110,13 @@ const unsigned long user_start = (unsigned long)&__user_start;
 extern unsigned long __user_end;
 const unsigned long user_end = (unsigned long)&__user_end;
 
-
-
 //just put new task in queue
 void copy_process(unsigned long flags, void (*main)(void))
 {
     struct task_struct* p = NULL;
 
     preempt_disable();
-    p = (struct task_struct*)get_free_page(GFP_KERNEL); 
-    printf("p : 0x%lx\n", p);
+    p = (struct task_struct*)get_free_page(GFP_KERNEL);
 
     p->cpu_context.x19 = (unsigned long)main;
     p->cpu_context.sp = (unsigned long)p + STACK_SZ;
@@ -137,23 +134,17 @@ void copy_process(unsigned long flags, void (*main)(void))
         alloc_user_pages(USER_MAX - USER_STACK_SZ, USER_STACK_SZ, p->mm);
         new->sp = USER_MAX;
         //分配并复制代码
-        printf("user code sz %d\n", user_end-user_start);
-        printf("user code start 0x%lx\n", user_start);
         alloc_user_pages(USER_START, user_end-user_start, p->mm);
         new->pc = USER_START;
         //装载程序到用户空间
         switch_mm(p->mm->pgd);
         memcpy( USER_START, (void*)user_start, user_end-user_start );
-        printf("VA 0X0 contain: 0x%lx,  sp: 0x%lx\n", *(unsigned long*)(USER_START), (unsigned long*)(new->sp) );
         new->spsr = PSR_MODE_EL0t;      //使得eret能够返回到el0
-        new->sp = 0x100;
     }
 
     task_add(p);
     preempt_enable();
 }
-
-
 
 
 //任务准备结束自己
@@ -170,8 +161,5 @@ void delete_self()
     free_page((unsigned long)current);
     schedule();
 }
-
-
-
 
 

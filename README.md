@@ -8,5 +8,6 @@ https://github.com/NienfengYao/armv8-bare-metal
 
 参考  
 https://github.com/s-matyukevich/raspberry-pi-os  
+https://elixir.bootlin.com/linux/v2.6.24/source  
 https://github.com/labrick/linux-0.11  
 

@@ -69,7 +69,6 @@ extern struct page mem_map[PAGING_PAGES];
 
 #ifndef _ASSEMBLY_
 
-
 struct vm_area_struct{
     unsigned long start;            //起始地址
     int size;                       //必须是整数个页
@@ -87,7 +86,6 @@ extern struct page* alloc_page(void);
 extern void* get_free_page(int gfp_flags);
 extern void __free_page(struct page*);
 extern void free_page(unsigned long addr);
-extern void alloc_user_page( unsigned long addr, struct mm_struct* mm );
 extern void alloc_user_pages( unsigned long start, unsigned long size, struct mm_struct* mm );
 #endif
 

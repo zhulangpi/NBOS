@@ -46,7 +46,7 @@
     .macro kernel_exit, el
 
     .if \el == 0
-   // bl schedule
+//    bl schedule
     .endif
 
     ldp x22, x23, [sp, #16 * 16]
@@ -127,9 +127,7 @@ vector_table_el1:
     b   _lower_el_aarch32_serror
 
 
-
 _curr_el_sp0_sync:
- //   mrs x1, esr_el0
     mov x0, #0
     bl   put_exception
 _curr_el_sp0_irq:
@@ -142,7 +140,6 @@ _curr_el_sp0_serror:
     mov x0, #3
     bl   put_exception
 
-
 _curr_el_spx_sync:
     mov x0, #4
     bl   put_exception
@@ -154,14 +151,12 @@ _curr_el_spx_irq:
     bl  irq_dispatch
     kernel_exit 1
 
-
 _curr_el_spx_fiq:
     mov x0, #6
     bl   put_exception
 _curr_el_spx_serror:
     mov x0, #7
     bl   put_exception
-
 
 //el0进入的异常，系统调用
 _lower_el_aarch64_sync:
@@ -193,7 +188,7 @@ el0_svc:
     kernel_exit 0
 
     .globl  ret_from_fork
-//fork出的、新加入任务队列的、从未运行过的任务 的通用入口代码，x19存储跳转地址，任务刚创建默认关抢占，在此处打开抢占
+//fork出的、新加入任务队列的、从未运行过的任务 的通用入口代码，x19存储跳转地址
 ret_from_fork:
     cbz x19, ret_to_user    //not a kernel thread
     mov x30, x19 
@@ -214,7 +209,6 @@ _lower_el_aarch64_fiq:
 _lower_el_aarch64_serror:
     mov x0, #11
     bl   put_exception
-
 
 _lower_el_aarch32_sync:
     mov x0, #12
@@ -242,7 +236,7 @@ _lower_el_aarch32_serror:
 
     .globl  cpu_switch_to
 cpu_switch_to:
-    mov x10, #0   //offsetof( struct task_struct, cpu_context) 
+    mov x10, #0                 //offsetof( struct task_struct, cpu_context) 
     add x8, x0, x10             //&(next->cpu_context)
     mov x9, sp
     stp x19, x20, [x8], #16     // store callee-saved registers

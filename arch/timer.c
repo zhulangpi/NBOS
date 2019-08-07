@@ -16,8 +16,6 @@ void timer_handler(void)
 {
     unsigned long current_cnt;
 
-    printf("timer_handler: \n");
-
 	// Disable the timer
 	disable_cntv();
 	gicd_clear_pending(TIMER_IRQ);
@@ -28,7 +26,7 @@ void timer_handler(void)
 	raw_write_cntv_cval_el0(current_cnt + ticks);
 	// Enable the timer
 	enable_cntv();
-
+    
     scheduler_tick();
 }
 
@@ -56,8 +54,5 @@ void timer_init(void)
 
 	// Enable the timer
 	enable_cntv();
-
-//	disable_irq();
-
 }
 

@@ -252,3 +252,27 @@ void switch_mm(unsigned long pgd)
     : : "r" (pgd) : "memory");
 }
 
+
+void disable_irqsave(unsigned long *flag)
+{
+    unsigned long DAIF_state = 0;
+	__asm__ __volatile__(
+    "mrs %0, DAIF\n\t"
+    "msr DAIFSet, %1\n\t"
+    : "=r" (DAIF_state)
+    : "i" (DAIF_IRQ_BIT) 
+    : "memory");
+    *flag = DAIF_state & DAIF_IRQ_BIT;
+}
+
+void enable_irqsave(unsigned long flag)
+{
+    if(flag & DAIF_IRQ_BIT){
+    	__asm__ __volatile__(
+        "msr DAIFSet, %0\n\t" 
+        : 
+        : "i" (DAIF_IRQ_BIT)  
+        : "memory");
+    }
+}
+

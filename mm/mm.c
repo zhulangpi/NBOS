@@ -57,20 +57,13 @@ void* get_free_page(int gfp_flags)
         memset(__va(page_to_pa(page)) , 0, PAGE_SIZE );
         return  __va(page_to_pa(page));
 
-    }else if(gfp_flags==GFP_USER){
-    //映射该页到当前进程的地址空间中
-    //1. 找到地址空间中的符合大小的空缺
-    //2. 填页表
-
-        ;
     }
     printf("get free page failed\n");
     return NULL;
 }
 
 
-
-void alloc_user_page( unsigned long addr, struct mm_struct* mm )
+static void alloc_user_page( unsigned long addr, struct mm_struct* mm )
 {
     unsigned long pgd_index = 0, pud_index = 0, pmd_index = 0, pte_index = 0;
     unsigned long *pgd_entry = NULL, *pud_entry = NULL, *pmd_entry = NULL, *pte_entry = NULL;
@@ -121,3 +114,4 @@ void alloc_user_pages( unsigned long start, unsigned long size, struct mm_struct
     vma->next = NULL;
     mm->vma = vma;
 }
+

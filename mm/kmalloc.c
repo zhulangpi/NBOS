@@ -58,7 +58,7 @@ void *kmalloc(unsigned int len)
 	struct _bucket_dir	*bdir;
 	struct bucket_desc	*bdesc;
 	void			*retval;
-
+    unsigned long   irqflag;
 	/*
 	 * First we search the bucket_dir to find the right bucket change
 	 * for this request.
@@ -74,7 +74,7 @@ void *kmalloc(unsigned int len)
 	/*
 	 * Now we search for a bucket descriptor which has free space
 	 */
-	disable_irq();	/* Avoid race conditions */
+	disable_irqsave(&irqflag);	/* Avoid race conditions */
 	for (bdesc = bdir->chain; bdesc; bdesc = bdesc->next) 
 		if (bdesc->freeptr)
 			break;
@@ -107,7 +107,7 @@ void *kmalloc(unsigned int len)
 	retval = (void *) bdesc->freeptr;
 	bdesc->freeptr = *((void **) retval);
 	bdesc->refcnt++;
-	enable_irq();	/* OK, we're safe again */
+	enable_irqsave(irqflag);	/* OK, we're safe again */
 	return(retval);
 }
 
@@ -116,6 +116,7 @@ void free_s(void *obj, int size)
 	void		*page;
 	struct _bucket_dir	*bdir;
 	struct bucket_desc	*bdesc, *prev;
+    unsigned long   irqflag;
 
 	/* Calculate what page this object lives in */
 	page = (void *)  ((unsigned long) obj & 0xfffff000);
@@ -133,7 +134,7 @@ void free_s(void *obj, int size)
 	}
 	printf("Bad address passed to kernel free_s()\n");
 found:
-	disable_irq(); /* To avoid race conditions */
+	disable_irqsave(&irqflag); /* To avoid race conditions */
 	*((void **)obj) = bdesc->freeptr;
 	bdesc->freeptr = obj;
 	bdesc->refcnt--;
@@ -158,7 +159,7 @@ found:
 		bdesc->next = free_bucket_desc;
 		free_bucket_desc = bdesc;
 	}
-	enable_irq();
+	enable_irqsave(irqflag);
 	return;
 }
 

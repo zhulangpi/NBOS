@@ -89,7 +89,8 @@ unsigned long raw_read_cntv_cval_el0(void);
 void raw_write_cntv_cval_el0(unsigned long cntv_cval_el0);
 
 void switch_mm(unsigned long pgd);
-
+void disable_irqsave(unsigned long *flag);
+void enable_irqsave(unsigned long flag);
 
 #endif
 

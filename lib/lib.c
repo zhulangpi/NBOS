@@ -50,3 +50,12 @@ void log(void)
     putc(NULL,'#');
     putc(NULL,'\n');
 }
+
+
+void kdelay(void)
+{
+    unsigned int i = 1<<24;
+    while(i--){
+    }   
+}
+
