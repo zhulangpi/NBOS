@@ -1,27 +1,32 @@
 #include "syscall.h"
 #include "printf.h"
 #include "task.h"
-
+#include "aarch64.h"
 
 
 void* syscall_table[SYSCALL_NR] = { sys_write, sys_fork, sys_malloc, sys_exit };
 
-void sys_write(char *buf)
+int sys_write(char *buf)
 {
-    printf("%s",buf);
+    return printf("%s",buf);
 }
 
-void sys_fork( void (*main)(void) )
+int sys_fork(void)
 {
     copy_process(USER_PROCESS);
+    return 0;
 }
 
-void sys_malloc(void)
+int sys_malloc(void)
 {
+    return 0;
 }
 
-void sys_exit(void)
+int sys_exit(void)
 {
+    current->state = TASK_ZOMBIE;
+    schedule();
+    return 0;
 }
 
 

@@ -126,16 +126,18 @@ void alloc_user_pages( unsigned long start, unsigned long size, struct mm_struct
 void print_process_page(struct mm_struct *mm)
 {
     int i = 0;
+    if(!mm)
+        return ;
     printf("user page:\n");
     for(i=0;i<MAX_USER_PAGES;i++){
         if(mm->vma[i].pa!=0){
-            printf("va: 0x%x,\t pa: 0x%x\n", mm->vma[i].va, mm->vma[i].pa);
+            printf("va: 0x%p,\t pa: 0x%p\n", mm->vma[i].va, mm->vma[i].pa);
         }
     }
     printf("pgtbl page:\n");
     for(i=0;i<MAX_PGTBL_PAGES;i++){
         if(mm->pgtbl_page[i]!=NULL){
-            printf("pa: 0x%x\n", mm->pgtbl_page[i] );
+            printf("va: 0x%p,\t pa: 0x%p\n", mm->pgtbl_page[i], __pa(mm->pgtbl_page[i]) );
         }
     }
 }

@@ -14,8 +14,10 @@ struct task_struct *init_task = (struct task_struct*)stack_init_task;
 void idle_main(void)
 {
     while(1){
-        printf("idle\n");
+        printf("this is idle\n");
         kdelay();
+        clear_zombie();
+//        printf("%d tasks in task_queue\n", task_nums());
     }
 }
 
@@ -27,7 +29,8 @@ void init_main()
     init_mm();
     timer_init();
 
-//    kthread_create(idle_main);
+//    copy_process(USER_PROCESS);
+    kthread_create(idle_main);
     copy_process(USER_PROCESS);
 //    copy_process(USER_PROCESS);
 

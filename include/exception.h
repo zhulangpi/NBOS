@@ -10,7 +10,7 @@
 
 
 #define FRAME_SZ        (17*16)
-#define X0_OFFSET       (0)
+#define X0_OFFSET       (FRAME_SZ)
 
 #define ESR_EC_MASK     (0x3f<<26)
 #define ESR_EC_SVC      (0x15<<26)
@@ -19,7 +19,7 @@
 
 #ifndef _ASSEMBLY_
 
-extern void put_exception(unsigned long no);
+extern void put_exception(unsigned long no, unsigned long lr);
 extern void exception_exception(unsigned int esr_el1);
 extern void irq_dispatch(void);
 

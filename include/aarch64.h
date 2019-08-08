@@ -33,6 +33,7 @@
 #define DAIF_ABT_BIT		(1<<2)	/* Asynchronous abort mask bit */
 #define DAIF_IRQ_BIT		(1<<1)	/* IRQ mask bit */
 #define DAIF_FIQ_BIT		(1<<0)	/* FIQ mask bit */
+#define SPSR_DAIF_SHIFT     (6)
 
 /*
  * Interrupt flags
@@ -48,6 +49,7 @@
 
 
 #ifndef _ASSEMBLY_
+#include "mm.h"
 
 /* Wait For Interrupt */
 #define wfi()		asm volatile("wfi" : : : "memory")
@@ -88,7 +90,7 @@ unsigned long raw_read_cntvct_el0(void);
 unsigned long raw_read_cntv_cval_el0(void);
 void raw_write_cntv_cval_el0(unsigned long cntv_cval_el0);
 
-void switch_mm(unsigned long pgd);
+void switch_mm(struct mm_struct *mm);
 void disable_irqsave(unsigned long *flag);
 void enable_irqsave(unsigned long flag);
 

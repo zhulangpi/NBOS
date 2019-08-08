@@ -24,9 +24,10 @@
 
 
 //任务状态定义
-#define TASK_DEAD    0   //任务刚创建或任务被杀死
-#define TASK_RUNNING 1   //任务可以运行
-#define TASK_STOP    2   //任务被暂停或阻塞
+#define TASK_DEAD       0   //任务刚创建或任务已经被杀死
+#define TASK_RUNNING    1   //任务正在或可以运行
+#define TASK_STOP       2   //任务被暂停或阻塞
+#define TASK_ZOMBIE     3   //任务已结束，等待资源释放
 
 
 struct cpu_context {
@@ -55,7 +56,6 @@ struct pt_regs{
 
 
 #define TASK_QUEUE_LENGTH   32
-
 
 /* 任务描述符 */
 struct task_struct{
@@ -87,5 +87,7 @@ extern void copy_process(unsigned long flags);
 extern void kthread_create(void (*main)(void));
 extern void schedule(void);
 extern void scheduler_tick(void);
-
+extern void clear_zombie(void);
+extern int  task_nums(void);
+extern void print_task_struct(struct task_struct *p);
 #endif

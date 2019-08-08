@@ -242,8 +242,15 @@ void raw_write_cntv_cval_el0(unsigned long cntv_cval_el0)
 /*
     switch ttbr0_el1
 */
-void switch_mm(unsigned long pgd)
+void switch_mm(struct mm_struct *mm)
 {
+    unsigned long pgd = 0;
+    if(mm){
+        pgd = mm->pgd;
+    }else{
+        return ;
+    }
+
     __asm__ __volatile__(
     "msr ttbr0_el1, %0\n\t" 
     "tlbi vmalle1is\n\t"
@@ -262,14 +269,14 @@ void disable_irqsave(unsigned long *flag)
     : "=r" (DAIF_state)
     : "i" (DAIF_IRQ_BIT) 
     : "memory");
-    *flag = DAIF_state & DAIF_IRQ_BIT;
+    *flag = DAIF_state & (DAIF_IRQ_BIT << SPSR_DAIF_SHIFT);
 }
 
 void enable_irqsave(unsigned long flag)
 {
-    if(flag & DAIF_IRQ_BIT){
+    if( !(flag & (DAIF_IRQ_BIT << SPSR_DAIF_SHIFT) ) ){
     	__asm__ __volatile__(
-        "msr DAIFSet, %0\n\t" 
+        "msr DAIFClr, %0\n\t" 
         : 
         : "i" (DAIF_IRQ_BIT)  
         : "memory");

@@ -142,6 +142,7 @@ _curr_el_sp0_serror:
 
 _curr_el_spx_sync:
     mov x0, #4
+    mrs x1, elr_el1
     bl   put_exception
 
 //在内核态时接收到irq，进入异常，
@@ -170,7 +171,6 @@ _lower_el_aarch64_sync:
     bl  put_exception
 
 el0_svc:
-//    and x8, x19, #ESR_SVC_IMM16_MASK //获得系统调用号
     ldr x9, =syscall_table
     mov x10,  #SYSCALL_NR
     cmp x8, x10
@@ -190,10 +190,12 @@ el0_svc:
     .globl  ret_from_fork
 //fork出的、新加入任务队列的、从未运行过的任务 的通用入口代码，x19存储跳转地址
 ret_from_fork:
-    cbz x19, ret_to_user    //not a kernel thread
-    mov x30, x19 
+    cbz x19, ret_to_user
+    mov x30, x19        //just a kthread
     ret 
-ret_to_user:
+ret_to_user:            //not a kthread
+    msr ttbr0_el1, x20
+    tlbi vmalle1is
     kernel_exit 0
 
 

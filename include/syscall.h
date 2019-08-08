@@ -11,10 +11,10 @@
 #ifndef _ASSEMBLY_
 
 extern void* syscall_table[];
-extern void sys_write();
-extern void sys_fork();
-extern void sys_malloc();
-extern void sys_exit();
+extern int sys_write(char *s);
+extern int sys_fork(void);
+extern int sys_malloc(void);
+extern int sys_exit(void);
 
 #endif
 

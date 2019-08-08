@@ -28,7 +28,7 @@ LDFLAGS = -nostartfiles
 
 ARCH = arch/aarch64.o arch/gic_v3.o arch/timer.o arch/start.o arch/exception.o arch/vector.o
 INIT = init/init_task.o
-KERNEL = kernel/task.o kernel/syscall.o kernel/soft_timer.o
+KERNEL = kernel/task.o kernel/syscall.o kernel/soft_timer.o kernel/atomic.o
 MM = mm/mm.o mm/kmalloc.o
 LIB = lib/lib.o lib/printf.o
 USER = user/process1.o user/sys_user.o user/lib_user.o
