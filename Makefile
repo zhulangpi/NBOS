@@ -52,7 +52,7 @@ $(IMAGE): $(OBJS)
 	$(CC) $(CFLAGS) $< -c -o $@
 
 clean:
-	rm -f $(IMAGE) $(OBJS) *.list *.sym *.bin
+	rm -f $(IMAGE) $(OBJS) *.list *.sym *.bin qemu.log
 
 .PHONY: all clean
 ############################################
@@ -77,6 +77,7 @@ qemu_cmd_args = \
         $(cpu_config) \
         -nographic \
         -serial mon:stdio \
+        -d in_asm,int,mmu -D ./qemu.log \
         -kernel NBOS.bin
 
 
