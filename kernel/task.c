@@ -5,6 +5,7 @@
 #include "mm.h"
 #include "syscall.h"
 #include "printf.h"
+#include "barrier.h"
 
 
 extern void cpu_switch_to(struct task_struct *prev,  struct task_struct *next );
@@ -18,10 +19,12 @@ static struct task_struct* next = NULL;
 void preempt_disable(void)
 {
     current->preempt_count++;
+    barrier();
 }
 
 void preempt_enable(void)
 {
+    barrier();
     current->preempt_count--;
 }
 

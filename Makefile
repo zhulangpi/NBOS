@@ -4,6 +4,7 @@
 
 ################################################
 IMAGE := NBOS.elf
+FILE_SYSTEM := flash1.img
 ROOT := $(shell pwd)
 
 CROSS_COMPILE = aarch64-elf-
@@ -28,7 +29,7 @@ LDFLAGS = -nostartfiles
 
 ARCH = arch/aarch64.o arch/gic_v3.o arch/timer.o arch/start.o arch/exception.o arch/vector.o
 INIT = init/init_task.o
-KERNEL = kernel/task.o kernel/syscall.o kernel/soft_timer.o kernel/atomic.o
+KERNEL = kernel/task.o kernel/syscall.o kernel/soft_timer.o
 MM = mm/mm.o mm/kmalloc.o
 LIB = lib/lib.o lib/printf.o
 USER = user/process1.o user/sys_user.o user/lib_user.o
@@ -51,8 +52,12 @@ $(IMAGE): $(OBJS)
 %.o : %.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
+
+$(FILE_SYSTEM):
+	dd if=/dev/zero of=flash1.img bs=4096 count=16384
+
 clean:
-	rm -f $(IMAGE) $(OBJS) *.list *.sym *.bin qemu.log
+	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log
 
 .PHONY: all clean
 ############################################
@@ -78,18 +83,19 @@ qemu_cmd_args = \
         -nographic \
         -serial mon:stdio \
         -d in_asm,int,mmu -D ./qemu.log \
+        -drive if=pflash,file=$(FILE_SYSTEM),unit=1 \
         -kernel NBOS.bin
 
 
-run: $(IMAGE)
+run: $(IMAGE) $(FILE_SYSTEM)
 	$(qemu) $(qemu_cmd_args)
 
-gdb_srv:$(IMAGE)
+gdb_srv:$(IMAGE) $(FILE_SYSTEM)
 	$(qemu) \
 	-gdb tcp::$(qgdb_port) -S \
 	$(qemu_cmd_args)
 
-gdb_cli:$(IMAGE)
+gdb_cli:$(IMAGE) $(FILE_SYSTEM)
 	$(gdb) \
 		-ex="target remote $(qgdb_host):$(qgdb_port)" \
 		-ex="symbol-file $(IMAGE)" \
