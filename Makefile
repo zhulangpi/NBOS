@@ -38,7 +38,7 @@ OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB) $(USER)
 
 LDSCRIPT = linker.ld
 
-all: $(IMAGE)
+all: $(IMAGE) $(FILE_SYSTEM)
 
 $(IMAGE): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -T$(LDSCRIPT) -o $(IMAGE)
@@ -54,12 +54,21 @@ $(IMAGE): $(OBJS)
 
 
 $(FILE_SYSTEM):
-	dd if=/dev/zero of=flash1.img bs=4096 count=16384
+	dd if=/dev/zero of=$(FILE_SYSTEM) bs=4096 count=16384
+	mkfs.ext4 $(FILE_SYSTEM)
+	mkdir tmp_fs
+	sudo mount -o loop flash1.img tmp_fs
+	sudo cp -rf rootfs/* tmp_fs
+	sudo umount tmp_fs
+	sudo rm -rf tmp_fs
 
 clean:
-	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log
+	rm -f $(IMAGE) $(OBJS) *.list *.sym *.bin qemu.log
 
-.PHONY: all clean
+distclean:
+	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log arch/virt.dts
+
+.PHONY: all clean distclean
 ############################################
 
 # run qemu
