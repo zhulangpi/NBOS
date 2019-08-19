@@ -16,7 +16,10 @@ _start:
     msr sctlr_el1, x0
 
 /* 
-    MMU kernel map
+    MMU kernel map	(DRAM + DEVICE regs)
+	map 0x4000 0000 				to 	0xffff 0000 0000 0000 			(1020MB)
+	map 0xUART_PA_BASE 				to 	0xffff 0000 0000 0000 + 1020MB 	(2MB)
+	map 0xQEMU_VIRT_GIC_PA_BASE 	to 	0xffff 0000 0000 0000 + 1022MB 	(2MB)
 */
     // 在内存中创建页表， PGD一项， PUD一项，PMD 512项（每项2MB），各级各占用一页
     mov  x0, #KERNEL_VA_START   // x0  VA
@@ -69,7 +72,8 @@ _start:
 
 
 /*
-    MMU DRAM map
+    MMU DRAM temporary map
+    map 0x4000 0000 - 0x4020 0000(DRAM) to 0x4000 0000 - 0x4020 0000(VA)
 */
     mov  x0, #MEM_BASE
     adrp x1, ram_tbl_start      // x1  PA for PGD base

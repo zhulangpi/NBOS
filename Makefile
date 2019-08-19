@@ -32,9 +32,8 @@ INIT = init/init_task.o
 KERNEL = kernel/task.o kernel/syscall.o kernel/soft_timer.o
 MM = mm/mm.o mm/kmalloc.o
 LIB = lib/lib.o lib/printf.o
-USER = user/process1.o user/sys_user.o user/lib_user.o
 
-OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB) $(USER)
+OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB)
 
 LDSCRIPT = linker.ld
 
@@ -54,18 +53,16 @@ $(IMAGE): $(OBJS)
 
 
 $(FILE_SYSTEM):
-	dd if=/dev/zero of=$(FILE_SYSTEM) bs=4096 count=16384
-	mkfs.ext4 $(FILE_SYSTEM)
-	mkdir tmp_fs
-	sudo mount -o loop flash1.img tmp_fs
-	sudo cp -rf rootfs/* tmp_fs
-	sudo umount tmp_fs
-	sudo rm -rf tmp_fs
+	make all -C rootfs
+	dd if=/dev/zero of=flash1.img bs=4096 count=16384
+	dd if=rootfs/process1/user_code.bin of=flash1.img bs=4096 count=16384 conv=notrunc
+
 
 clean:
 	rm -f $(IMAGE) $(OBJS) *.list *.sym *.bin qemu.log
+	make clean -C rootfs
 
-distclean:
+distclean: clean
 	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log arch/virt.dts
 
 .PHONY: all clean distclean
@@ -92,7 +89,7 @@ qemu_cmd_args = \
         -nographic \
         -serial mon:stdio \
         -d in_asm,int,mmu -D ./qemu.log \
-        -drive if=pflash,file=$(FILE_SYSTEM),unit=1 \
+        -drive if=pflash,format=raw,file=$(FILE_SYSTEM),unit=1 \
         -kernel NBOS.bin
 
 

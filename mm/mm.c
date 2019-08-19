@@ -4,12 +4,15 @@
 #include "lib.h"
 #include "printf.h"
 #include "atomic.h"
+#include "board.h"
 
 extern unsigned long __img_end;
 const void* img_end = &__img_end;
 
 void init_mm(void)
 {
+	map_kernel_sections( PFLASH1_PA_BASE, PFLASH1_BASE, PFLASH1_SIZE,  MMU_FLAGS );
+
     if(__pa(img_end) > HIGH_MEM){
         printf("image is too large\n");
     }
@@ -52,6 +55,55 @@ void* get_free_page(int gfp_flags)
     (void)gfp_flags;
     memset(__va(page_to_pa(page)) , 0, PAGE_SIZE );
     return  __va(page_to_pa(page));
+}
+
+
+static void map_kernel_section( unsigned long pa, unsigned long addr, unsigned long flags )
+{
+    unsigned long pgd_index = 0, pud_index = 0, pmd_index = 0;
+    unsigned long *pgd_entry = NULL, *pud_entry = NULL, *pmd_entry = NULL;
+    void* va;
+
+	extern const unsigned long pg_tbl_start;
+	unsigned long pgd = (unsigned long)&pg_tbl_start;
+
+
+	if(flags!=MMU_FLAGS && flags!=MMU_DEVICE_FLAGS){
+		printf("flags error, map failed\n");
+		return;
+	}
+
+    pgd_index = (addr >> PGD_SHIFT) & TABLE_MASK;
+    pud_index = (addr >> PUD_SHIFT) & TABLE_MASK;
+    pmd_index = (addr >> PMD_SHIFT) & TABLE_MASK;
+
+    //计算PGD表项地址
+    pgd_entry = (void*)pgd + (pgd_index << ENTRY_SHIFT);
+    if(*pgd_entry==0){  //分配PUD页，填充PGD表项
+        va = get_free_page(GFP_KERNEL);
+        *pgd_entry = __pa(va) | MM_TYPE_PAGE_TABLE;
+    }   
+
+    pud_entry = __va(ENTRY_GET_ADDR(*pgd_entry)) + (pud_index << ENTRY_SHIFT);
+    if(*pud_entry==0){
+        va = get_free_page(GFP_KERNEL);
+        *pud_entry = __pa(va) | MM_TYPE_PAGE_TABLE;
+    }   
+
+    pmd_entry = __va(ENTRY_GET_ADDR(*pud_entry)) + (pmd_index << ENTRY_SHIFT);
+    if(*pmd_entry==0){
+        *pmd_entry = (pa & (~SECTION_MASK)) | flags;
+    }   
+
+}
+
+void map_kernel_sections(unsigned long pa, unsigned long addr, unsigned long size, unsigned long flags)
+{
+    unsigned long sz = (size & (SECTION_SIZE-1))?( (size >> SECTION_SHIFT) + 1):(size >> SECTION_SHIFT);
+    int i = 0;
+    for(i = 0; i < sz; i++){
+        map_kernel_section( pa + (i << SECTION_SHIFT), addr + (i << SECTION_SHIFT), flags );
+    }
 }
 
 

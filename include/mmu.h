@@ -26,13 +26,12 @@
 #define MMU_DEVICE_FLAGS            (MM_TYPE_BLOCK | (MT_DEVICE_nGnRnE << 2) | MM_ACCESS)   
 #define MMU_PTE_FLAGS               (MM_TYPE_PAGE | (MT_NORMAL_NC << 2) | MM_ACCESS | MM_ACCESS_PERMISSION) 
 
+
 #define TCR_T0SZ                    (64 - 48) 
 #define TCR_T1SZ                    ((64 - 48) << 16)
 #define TCR_TG0_4K                  (0 << 14)
 #define TCR_TG1_4K                  (2 << 30)
 #define TCR_VALUE                   (TCR_T0SZ | TCR_T1SZ | TCR_TG0_4K | TCR_TG1_4K)
-
-
 
 
 #endif

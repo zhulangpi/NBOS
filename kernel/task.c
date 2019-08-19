@@ -75,7 +75,6 @@ void scheduler_tick(void)
         printf("can't preempt\n");
        return;
     }
-
     select_next_task();
 //    print_task_struct( task_queue[0] );
 //    printf("current: 0x%p\n", current);
@@ -119,13 +118,9 @@ static void task_add(struct task_struct *p)
     }
 }
 
-extern unsigned long __user_start;
-const unsigned long user_start = (unsigned long)&__user_start;
-extern unsigned long __user_end;
-const unsigned long user_end = (unsigned long)&__user_end;
 
 //just put new task in queue
-void copy_process(unsigned long flags)
+void copy_process(unsigned long flags, unsigned long start, unsigned long size)
 {
     struct task_struct* p = NULL;
     struct pt_regs* new = NULL; 
@@ -150,11 +145,11 @@ void copy_process(unsigned long flags)
     alloc_user_pages(USER_MAX - USER_STACK_SZ, USER_STACK_SZ, p->mm);
     new->sp = USER_MAX;
     //分配程序空间
-    alloc_user_pages(USER_START, user_end-user_start, p->mm);
+    alloc_user_pages(USER_START, size, p->mm);
     new->pc = USER_START;
     //装载程序到目标用户空间
     switch_mm(p->mm);
-    memcpy( USER_START, (void*)user_start, user_end-user_start );
+    memcpy( USER_START, (void*)start, size );
     switch_mm(current->mm);
     new->spsr = PSR_MODE_EL0t;      //使得eret能够返回到el0
 

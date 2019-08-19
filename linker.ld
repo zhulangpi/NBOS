@@ -7,14 +7,6 @@ SECTIONS
         arch/start.o
     }
     . = ALIGN(4096);
-    __user_start = .;
-    .user : {
-        user/process1.o
-        user/sys_user.o
-        user/lib_user.o
-    }
-    __user_end = .;
-    . = ALIGN(4096);
     .text : { 
         *(.text)
     }
@@ -36,6 +28,6 @@ SECTIONS
     . += 3*4096;
     ram_tbl_end = .;
 
-    __img_end = .;
+	__img_end = .;
 }
 

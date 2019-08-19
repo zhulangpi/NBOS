@@ -35,8 +35,16 @@
 
 #define TIMER_IRQ					(27)  /** Timer IRQ  */
 
+
+// UART
 #define UART_PA_BASE                (0x09000000)
 #define UART_BASE                   (0xffff00003fc00000)   
 #define UART_DATA                   (*(volatile unsigned long*)(UART_BASE))
+
+
+// PFLASH
+#define PFLASH1_PA_BASE				(0x04000000)
+#define PFLASH1_BASE				(0xffff000400000000)
+#define PFLASH1_SIZE				(64*1024*1024)
 
 #endif  /* _BOARD_H */

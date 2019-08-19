@@ -5,7 +5,7 @@
 #include "timer.h"
 #include "syscall.h"
 #include "printf.h"
-
+#include "board.h"
 
 char stack_init_task[STACK_SZ] __attribute__((section(".data.init_stack")));
 struct task_struct *init_task = (struct task_struct*)stack_init_task;
@@ -29,10 +29,8 @@ void init_main()
     init_mm();
     timer_init();
 
-//    copy_process(USER_PROCESS);
     kthread_create(idle_main);
-    copy_process(USER_PROCESS);
-//    copy_process(USER_PROCESS);
+    copy_process(USER_PROCESS, PFLASH1_BASE, 16<<10);
 
     enable_irq();
     while(1){

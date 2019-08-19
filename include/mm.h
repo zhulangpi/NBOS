@@ -85,6 +85,7 @@ extern void init_mm(void);
 extern void* get_free_page(int gfp_flags);
 extern void __free_page(struct page*);
 extern void free_page(void* addr);
+extern void map_kernel_sections(unsigned long pa, unsigned long addr, unsigned long size,  unsigned long flags);
 extern void alloc_user_pages( unsigned long start, unsigned long size, struct mm_struct* mm );
 extern void print_process_page(struct mm_struct *mm);
 #endif

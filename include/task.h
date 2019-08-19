@@ -83,7 +83,7 @@ static __always_inline struct task_struct *get_current(void)
 
 extern void preempt_disable(void);
 extern void preempt_enable(void);
-extern void copy_process(unsigned long flags);
+extern void copy_process(unsigned long flags, unsigned long start, unsigned long size);
 extern void kthread_create(void (*main)(void));
 extern void schedule(void);
 extern void scheduler_tick(void);
