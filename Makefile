@@ -56,16 +56,15 @@ $(FILE_SYSTEM):
 	make all -C rootfs
 	dd if=/dev/zero of=flash1.img bs=4096 count=16384
 	dd if=rootfs/process1/user_code.bin of=flash1.img bs=4096 count=16384 conv=notrunc
+	dd if=rootfs/process2/user_code.bin of=flash1.img bs=4096 count=16384 seek=4 conv=notrunc
 
 
 clean:
-	rm -f $(IMAGE) $(OBJS) *.list *.sym *.bin qemu.log
+	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log arch/virt.dts
 	make clean -C rootfs
 
-distclean: clean
-	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log arch/virt.dts
 
-.PHONY: all clean distclean
+.PHONY: all clean
 ############################################
 
 # run qemu

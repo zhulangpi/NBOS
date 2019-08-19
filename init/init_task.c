@@ -31,6 +31,7 @@ void init_main()
 
     kthread_create(idle_main);
     copy_process(USER_PROCESS, PFLASH1_BASE, 16<<10);
+    copy_process(USER_PROCESS, PFLASH1_BASE + (16<<10), 16<<10);
 
     enable_irq();
     while(1){
