@@ -15,7 +15,7 @@ https://github.com/labrick/linux-0.11
 NBOS开发文档  
 ## 〇、总览
 ### 0.1 简介
-NBOS是一个小型的操作系统，以Linux为参照进行开发，先不启用MMU  
+NBOS是一个以Linux为参照的小型OS
 硬件开发环境选用QEMU模拟器中的ARM64的virt machine 和 cortex-a57 CPU  
 现在的配置QEMU启动后内部Bootloader做了一部分初始化，然后从0x4000 0000这个地址开始执行，并跳转到0x4008 0000，二进制镜像被加载到0x4008 0000地址处运行，默认是EL1  
 ### 0.2 已完成
