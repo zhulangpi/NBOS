@@ -12,7 +12,6 @@ extern void cpu_switch_to(struct task_struct *prev,  struct task_struct *next );
 extern void ret_from_fork(void);
 extern struct task_struct *init_task;
 
-static struct task_struct* task_queue[TASK_QUEUE_LENGTH] = { 0};
 static struct task_struct* next = NULL;
 
 
@@ -52,17 +51,11 @@ out:
 //从任务队列中选择一个状态为RUNNING的任务
 static void select_next_task(void)
 {
-    int i=0;
-    static int idx = -1;
     preempt_disable();
 
-    for(i=0; i<TASK_QUEUE_LENGTH; i++){
-        idx = (idx+1) % TASK_QUEUE_LENGTH;
-        if( task_queue[idx] && (task_queue[idx]->state == TASK_RUNNING ) && (current!=task_queue[idx]) ){
-            next = task_queue[idx];
-            break;
-        }
-    }
+    //Round-Robin schdule
+    next = list_entry(current->list.next, struct task_struct, list);
+
     preempt_enable();
 }
 
@@ -97,25 +90,11 @@ void schedule()
 
 
 //将任务p添加到任务队列
-static void task_add(struct task_struct *p)
+static void task_add(struct task_struct *new)
 {
-    int i =0;
-
-    for(i=0; i< TASK_QUEUE_LENGTH; i++ ){
-        if( (task_queue[i]==NULL) || (task_queue[i]->state==TASK_DEAD) ){
-            task_queue[i] = p;
-            p->state = TASK_RUNNING;
-            next = p;
-            printf("add success\n");
-            printf("%d tasks in task_queue\n", task_nums());
-            return;
-        }
-    }
-    
-    if(i==TASK_QUEUE_LENGTH){
-        printf("task add failed! task queue full!\n");
-        while(1);
-    }
+    list_add_tail(&new->list, &init_task->list);
+    new->state = TASK_RUNNING;
+    next = new;
 }
 
 
@@ -187,12 +166,7 @@ void delete_process(struct task_struct* p)
         return ;
     }
 
-    for(i=0;i<TASK_QUEUE_LENGTH;i++){
-        if(task_queue[i] == p){
-            task_queue[i] = NULL;
-            break;
-        }
-    }
+    list_del(&p->list);
 
     //释放用户空间映射的页
     for(i=0;i<MAX_USER_PAGES;i++){
@@ -218,12 +192,14 @@ void delete_process(struct task_struct* p)
 
 void clear_zombie(void)
 {
-    int i = 0;
+    struct list_head *pos;
+    struct task_struct *tmp;
     preempt_disable();
-    for(i=0; i<TASK_QUEUE_LENGTH; i++){
-        if(task_queue[i] && task_queue[i]->state == TASK_ZOMBIE){
-            delete_process(task_queue[i]);
-        }
+
+    list_for_each(pos, &init_task->list){
+        tmp = list_entry(pos, struct task_struct, list);
+        if(tmp->state == TASK_ZOMBIE)
+            delete_process(tmp);
     }
     preempt_enable();
 }
@@ -231,10 +207,11 @@ void clear_zombie(void)
 
 int task_nums(void)
 {
-    int i = 0, count = 0;
-    for(i=0;i<TASK_QUEUE_LENGTH;i++){
-        if(task_queue[i] && task_queue[i]->state == TASK_RUNNING)
-            count++;
+    int count = 0;
+    struct list_head *pos;
+    
+    list_for_each(pos, &init_task->list){
+        count++;
     }
     return count;
 }
@@ -246,5 +223,4 @@ void print_task_struct(struct task_struct *p)
     printf("x24: 0x%x\t x25: 0x%x\t x26: 0x%x\t x27: 0x%x\t x28: 0x%x\n", c.x24, c.x25, c.x26, c.x27, c.x28);
     printf("x29: 0x%x\t  sp: 0x%x\t  pc: 0x%x\n", c.x29, c.sp, c.pc );
     printf("x19 addr: 0x%p\n",  &p->cpu_context.x19);
-
 }

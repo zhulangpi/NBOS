@@ -2,12 +2,12 @@
 #define _TASK_H_
 
 #include "type.h"
-
+#include "list.h"
 
 #define STACK_SZ        (4<<10)
 #define USER_STACK_SZ   (STACK_SZ)
 
-
+//cpoy_process flags
 #define KERNEL_THREAD   0
 #define USER_PROCESS    1
 
@@ -65,6 +65,7 @@ struct task_struct{
     int state;
     unsigned long preempt_count;
     struct mm_struct *mm;
+    struct list_head list;
 };
 
 
