@@ -174,7 +174,7 @@ el0_svc:
     ldr x9, =syscall_table
     mov x10,  #SYSCALL_NR
     cmp x8, x10
-    b.hs    .           //如果大于等于最大系统调用总数，死循环
+    b.hs put_exception  //如果大于等于最大系统调用总数，错误处理
     lsl x11, x8,  #3    //获得该系统调用函数在函数表中的偏移，一个函数槽为long，8B，所以左移3位
     add x11, x9, x11    //得到处理函数存放的地址
     ldr x12, [x11]      //得到处理函数

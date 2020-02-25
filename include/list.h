@@ -8,12 +8,16 @@ struct list_head{
     struct list_head* next;
 };
 
-#define INIT_LIST_HEAD(p) { (p)->next = p; (p)->prev = p;}
+#define LIST_HEAD_INIT(name) { &(name), &(name) }
 
-#define LIST_HEAD(name) { \
-                            struct list_head name; \
-                            INIT_LIST_HEAD(&name); \
-                        }
+#define LIST_HEAD(name) \
+    struct list_head name = LIST_HEAD_INIT(name)
+
+static inline void INIT_LIST_HEAD(struct list_head *list)
+{
+    list->next = list;
+    list->prev = list;
+}
 
 /*
  * Insert a new entry between two known consecutive entries.

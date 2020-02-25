@@ -3,60 +3,63 @@
 #include "timer.h"
 #include "soft_timer.h"
 #include "lib.h"
+#include "task.h"
+#include "list.h"
+
+//timer list head
+LIST_HEAD(timer_head);
 
 
-
-static struct timer* timer_list[TIMERS_MAX]={0};
-
-
-void timer_add( unsigned long count, void (*main)(void) )
+void timer_add( unsigned long count, void (*main)(void), unsigned long mode )
 {
-    struct timer *new = NULL;
-    int idx = 0;
+    struct timer *new;
     new = (struct timer*)kmalloc(sizeof(struct timer));
 
-    new->goal_ticks = ticks + count;
+    new->count = count;
+    new->goal = jiffies + count;
     new->main = main;
+    new->mode = mode;
 
-    for( idx=0;idx<TIMERS_MAX;idx++ ){
-        if( timer_list[idx] == NULL ){
-            timer_list[idx] = new;
-        }
-
-    }
-
-
+    list_add(&new->list, &timer_head);
 }
 
 
 void timer_delete(struct timer* t)
 {
-    int idx=0;
-
-    for(idx=0;idx<TIMERS_MAX;idx++){
-        if(timer_list[idx]==t){
-//            kfree(t);
-            timer_list[idx] = NULL;
-        }
-
-    }
-
+    list_del(&t->list);
+    kfree(t);
 }
 
 
 void walk_timer_list(void)
 {
-    int idx = 0;
+    struct list_head *pos;
+    struct timer *tmp;
 
-    for( idx=0;idx<TIMERS_MAX;idx++ ){
-        if( (timer_list[idx]!=NULL)&&(timer_list[idx]->goal_ticks>ticks )){
-            timer_list[idx]->main();
-            timer_delete(timer_list[idx]);
+    list_for_each(pos, &timer_head){
+        tmp = list_entry(pos, struct timer, list);
+        
+        if(tmp->goal<jiffies)
+            continue;
+
+        if(tmp->main)
+            tmp->main();
+        if(tmp->mode == PERIODIC){
+            tmp->goal = jiffies + tmp->count;
+        }else{
+            timer_delete(tmp);
         }
-
     }
-
 }
 
+void timer_handler0()
+{
+    printf("this is timer_handler\n");
+}
+
+void init_timer(void)
+{
+    timer_add(100, timer_handler0, PERIODIC);
+}
 
 

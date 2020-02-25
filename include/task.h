@@ -91,4 +91,5 @@ extern void scheduler_tick(void);
 extern void clear_zombie(void);
 extern int  task_nums(void);
 extern void print_task_struct(struct task_struct *p);
+extern void print_task_queue(void);
 #endif

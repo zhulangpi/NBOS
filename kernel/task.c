@@ -39,6 +39,8 @@ static void switch_to(struct task_struct *next)
     if(current==next || next==NULL || next->state!=TASK_RUNNING)
         goto out;
 
+//    printf("---------switch task!---------\n");
+
     //切换用户态地址空间
     switch_mm(next->mm);
     //切换寄存器组
@@ -53,8 +55,10 @@ static void select_next_task(void)
 {
     preempt_disable();
 
+//    print_task_queue();
     //Round-Robin schdule
     next = list_entry(current->list.next, struct task_struct, list);
+//    printf("tasknum: %d, current: %x, next: %x\n", task_nums(), current, next);
 
     preempt_enable();
 }
@@ -65,7 +69,6 @@ void scheduler_tick(void)
 {
 
     if(current->preempt_count>0){
-        printf("can't preempt\n");
        return;
     }
     select_next_task();
@@ -81,7 +84,6 @@ void scheduler_tick(void)
 void schedule()
 {
     if(current->preempt_count>0){
-        printf("can't preempt\n");
        return;
     }
     select_next_task();
@@ -94,7 +96,7 @@ static void task_add(struct task_struct *new)
 {
     list_add_tail(&new->list, &init_task->list);
     new->state = TASK_RUNNING;
-    next = new;
+//    next = new;
 }
 
 
@@ -213,7 +215,7 @@ int task_nums(void)
     list_for_each(pos, &init_task->list){
         count++;
     }
-    return count;
+    return count + 1;   // +1 for init task
 }
 
 void print_task_struct(struct task_struct *p)
@@ -224,3 +226,18 @@ void print_task_struct(struct task_struct *p)
     printf("x29: 0x%x\t  sp: 0x%x\t  pc: 0x%x\n", c.x29, c.sp, c.pc );
     printf("x19 addr: 0x%p\n",  &p->cpu_context.x19);
 }
+
+
+void print_task_queue(void)
+{
+    struct list_head *pos;
+    struct task_struct *tmp;
+
+    printf("=============task_queue(has %d tasks)===============\n", task_nums());
+    print_task_struct(init_task);
+    list_for_each(pos, &init_task->list){
+        tmp = list_entry(pos, struct task_struct, list);
+        print_task_struct(tmp);
+    }
+}
+

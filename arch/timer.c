@@ -9,7 +9,12 @@
 
 #define TIMER_PERIOD_MS  100
 
-unsigned long ticks;
+unsigned long long jiffies = 0;
+
+//a constant
+//1 jiffies == ticks cycles, 
+//timer interrupt every ticks cycles.
+static unsigned long ticks;
 
 /* Assert Timer IRQ after TIMER_PERIOD_MS ms */
 void timer_handler(void)
@@ -26,7 +31,8 @@ void timer_handler(void)
 	raw_write_cntv_cval_el0(current_cnt + ticks);
 	// Enable the timer
 	enable_cntv();
-    
+
+    jiffies++;    
     scheduler_tick();
 }
 
@@ -44,7 +50,7 @@ void timer_init(void)
 	cntfrq = raw_read_cntfrq_el0();
 
 	// Next timer IRQ is after n ms.
-	ticks = TIMER_PERIOD_MS * (cntfrq / 1000);
+	ticks = TIMER_PERIOD_MS * (cntfrq / 1000);  //1000 for ms in s
 
 	// Get value of the current timer
 	current_cnt = raw_read_cntvct_el0();

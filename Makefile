@@ -79,7 +79,7 @@ gdb	= $(CROSS_COMPILE)gdb
 cpu_config = \
         -cpu cortex-a57 \
         -smp 1 \
-        -m 1G
+        -m 256M
  
 
 qemu_cmd_args = \
@@ -90,6 +90,17 @@ qemu_cmd_args = \
         -d in_asm,int,mmu -D ./qemu.log \
         -drive if=pflash,format=raw,file=$(FILE_SYSTEM),unit=1 \
         -kernel NBOS.bin
+
+# -d in_asm,int,mmu -D ./qemu.log   
+#这里dump出来的并不是指令执行trace，而是QEMU动态翻译执行过程中的所有翻译块，按翻译先后顺序排列，包含中断
+#但也能推测出大致执行流，例如
+#实际：A-B-B-C      dump：A-B-C
+#实际: A-B-A-B-C    dump: A-B-C
+#实际：A-B-B-B-C    dump: A-B-C
+#反汇编有问题，不影响实际执行
+
+#-drive if=pflash,format=raw,file=$(FILE_SYSTEM),unit=1 \
+#填充第二块pflash，第一块会被用于boot ROM
 
 
 run: $(IMAGE) $(FILE_SYSTEM)
