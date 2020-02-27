@@ -131,11 +131,11 @@ _start:
     orr x0, x0, #(0x1<<6)       //cpuectlr.smpen = 1
     msr s3_1_c15_c2_1, x0
     mrs x0, sctlr_el1
-//    orr x0, x0, #(0x1 << 2)       // D bit, dcache
-//    orr x0, x0, #(0x1 << 12)      // I bit, icache
+    orr x0, x0, #(0x1 << 2)       // D bit, dcache
+    orr x0, x0, #(0x1 << 12)      // I bit, icache
     orr x0, x0, #1              // M bit, mmu
     msr sctlr_el1, x0
-//    dsb sy
-//    isb
+    dsb sy
+    isb
 
     br x2

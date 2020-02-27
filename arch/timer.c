@@ -7,7 +7,7 @@
 #include "soft_timer.h"
 #include "printf.h"
 
-#define TIMER_PERIOD_MS  1
+#define TIMER_PERIOD_MS  10
 
 unsigned long long jiffies = 0;
 
@@ -29,10 +29,15 @@ void timer_handler(void)
 	current_cnt = raw_read_cntvct_el0();
 	// Set the interrupt in Current Time + TimerTick
 	raw_write_cntv_cval_el0(current_cnt + ticks);
+
+    jiffies++;
+
 	// Enable the timer
 	enable_cntv();
 
-    jiffies++;    
+    //前面定时器已经开始走，该函数内部会打开中断，如果打开中断前
+    //定时器已经超时，则会在开中断时再次进入定时器中断，形成嵌套
+    //造成栈溢出
     scheduler_tick();
 }
 

@@ -11,7 +11,7 @@ void irq_dispatch()
 {
     int irq;
 
-    disable_irq();
+//    disable_irq();                    //一进中断。默认关中断
     if( gic_v3_find_pending_irq(&irq) == IRQ_NOT_FOUND ){
         printf("IRQ not found!\n");
         goto restore_irq_out;
@@ -31,7 +31,11 @@ void irq_dispatch()
   //  gicd_enable_int(irq);           /* unmask this irq line */
 
 restore_irq_out:
-    enable_irq();
+
+//如果前面定时器已经打开，定时器开始走，此时打开中断，有可能中断还未退出，
+//再次进入中断，在第二次进入的中断中，又在此处嵌套第三个中断。。。
+//造成栈溢出
+//    enable_irq();
     return;
 }
 

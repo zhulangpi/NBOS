@@ -17,7 +17,6 @@ static void init_init_task(void);
 
 void idle_main(void)
 {
-    printf("enter idle\n");
     while(1){
         printf("this is idle\n");
         kdelay();
@@ -40,11 +39,10 @@ void init_main()
     kthread_create(idle_main);
     copy_process(USER_PROCESS, PFLASH1_BASE, 16<<10);
     copy_process(USER_PROCESS, PFLASH1_BASE + (16<<10), 16<<10);
-    print_task_struct(current);
+//    print_task_struct(current);
 
     //打开中断后，周期定时器中断中就可以开始调度了，以下均可能被抢占
     enable_irq();
-    printf("enter init\n");
     while(1){
         printf("this is init\n");
         kdelay();
@@ -58,5 +56,6 @@ static void init_init_task(void)
     init_task = (struct task_struct*)stack_init_task;
     INIT_LIST_HEAD(&init_task->list);
     init_task->state = TASK_RUNNING;
+    init_task->canary = CANARY_MAGIC_NUM;
 }
 

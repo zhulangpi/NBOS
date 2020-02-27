@@ -59,7 +59,7 @@ static void select_next_task(void)
     //Round-Robin schdule
     next = list_entry(current->list.next, struct task_struct, list);
 //    printf("tasknum: %d, current: %x, next: %x\n", task_nums(), current, next);
-
+//    dump_stack(current);
     preempt_enable();
 }
 
@@ -134,6 +134,7 @@ void copy_process(unsigned long flags, unsigned long start, unsigned long size)
     switch_mm(current->mm);
     new->spsr = PSR_MODE_EL0t;      //使得eret能够返回到el0
 
+    p->canary = CANARY_MAGIC_NUM;
     task_add(p);
     preempt_enable();
 
@@ -155,6 +156,7 @@ void kthread_create(void (*main)(void))
     p->cpu_context.pc = (unsigned long)ret_from_fork;
     p->preempt_count = 0;
 
+    p->canary = CANARY_MAGIC_NUM;
     task_add(p);
     preempt_enable();
 }
@@ -224,7 +226,8 @@ void print_task_struct(struct task_struct *p)
     printf("x19: 0x%x\t x12: 0x%x\t x21: 0x%x\t x22: 0x%x\t x23: 0x%x\n", c.x19, c.x20, c.x21, c.x22, c.x23);
     printf("x24: 0x%x\t x25: 0x%x\t x26: 0x%x\t x27: 0x%x\t x28: 0x%x\n", c.x24, c.x25, c.x26, c.x27, c.x28);
     printf("x29: 0x%x\t  sp: 0x%x\t  pc: 0x%x\n", c.x29, c.sp, c.pc );
-    printf("x19 addr: 0x%p\n",  &p->cpu_context.x19);
+    printf("task_struct addr: 0x%p\n", p);
+    printf("task_struct canary: %#x\n", p->canary);
 }
 
 
@@ -238,6 +241,19 @@ void print_task_queue(void)
     list_for_each(pos, &init_task->list){
         tmp = list_entry(pos, struct task_struct, list);
         print_task_struct(tmp);
+    }
+}
+
+void dump_stack(struct task_struct *p)
+{
+    unsigned int i=0;
+    unsigned long *tmp = (unsigned long *)p;
+
+    for(i=0; (8*i) < STACK_SZ; i=i+4){
+        printf("%#p: %#x\t", tmp, *tmp);tmp++;
+        printf("%#p: %#x\t", tmp, *tmp);tmp++;
+        printf("%#p: %#x\t", tmp, *tmp);tmp++;
+        printf("%#p: %#x\t\n", tmp, *tmp);tmp++;
     }
 }
 

@@ -46,7 +46,7 @@
     .macro kernel_exit, el
 
     .if \el == 0
-//    bl schedule
+//    bl schedule   //在返回用户态时触发调度
     .endif
 
     ldp x22, x23, [sp, #16 * 16]

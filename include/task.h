@@ -55,7 +55,7 @@ struct pt_regs{
 };
 
 
-#define TASK_QUEUE_LENGTH   32
+#define CANARY_MAGIC_NUM    (0xdeadbeef)
 
 /* 任务描述符 */
 struct task_struct{
@@ -66,6 +66,7 @@ struct task_struct{
     unsigned long preempt_count;
     struct mm_struct *mm;
     struct list_head list;
+    unsigned int canary;            //任务描述符位于栈顶，如果该值被修改，则栈溢出
 };
 
 
@@ -92,4 +93,5 @@ extern void clear_zombie(void);
 extern int  task_nums(void);
 extern void print_task_struct(struct task_struct *p);
 extern void print_task_queue(void);
+extern void dump_stack(struct task_struct*);
 #endif

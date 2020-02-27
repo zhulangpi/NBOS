@@ -2,7 +2,7 @@
 ENTRY(_start)
 SECTIONS
 {
-	. = 0xffff000000080000;
+	. = 0xffff000000080000;     /* 512K, QEMU会在0x0地址插入一段代码跳转到0x80000 */
 	.text.boot : { 
         arch/start.o
     }
