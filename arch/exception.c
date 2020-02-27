@@ -36,9 +36,16 @@ restore_irq_out:
 }
 
 
-void put_exception(unsigned long no, unsigned long lr)
+void put_exception(unsigned long no, unsigned long lr, unsigned int esr)
 {
-    printf("enter exception %d, entry is 0x%x\n", no, lr);
+    unsigned int EC , ISS ;
+    
+    EC = (esr & ESR_EC_MASK) >> ESR_EC_SHIFT;
+    ISS = esr & ESR_ISS_MASK;
+
+    printf("enter exception %d, entry is 0x%x, ", no, lr);
+    printf("exception class %#x, ISS is %#x\n", EC, ISS);
+
     while(1);
 }
 

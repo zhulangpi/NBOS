@@ -97,10 +97,10 @@ qemu_cmd_args = \
 #实际：A-B-B-C      dump：A-B-C
 #实际: A-B-A-B-C    dump: A-B-C
 #实际：A-B-B-B-C    dump: A-B-C
-#反汇编有问题，不影响实际执行
+#反汇编可能有问题，不影响实际执行
 
 #-drive if=pflash,format=raw,file=$(FILE_SYSTEM),unit=1 \
-#填充第二块pflash，第一块会被用于boot ROM
+#填充第二块pflash，第一块flash如果非空会被用作boot ROM
 
 
 run: $(IMAGE) $(FILE_SYSTEM)

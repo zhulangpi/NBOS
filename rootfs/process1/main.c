@@ -3,7 +3,7 @@
 
 void main(void)
 {
-    int i = 3;
+//    int i = 3;
 
     while(1){
         call_sys_write("user process1!\n");

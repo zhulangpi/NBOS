@@ -7,7 +7,7 @@
 #include "soft_timer.h"
 #include "printf.h"
 
-#define TIMER_PERIOD_MS  100
+#define TIMER_PERIOD_MS  1
 
 unsigned long long jiffies = 0;
 

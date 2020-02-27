@@ -80,7 +80,12 @@
     .endm
 
 
-
+    .macro exception_handler_entry, num
+    mov x0, \num
+    mrs x1, elr_el1
+    mrs x2, esr_el1
+    bl  put_exception
+    .endm
 
 
     vector_table_align
@@ -128,22 +133,16 @@ vector_table_el1:
 
 
 _curr_el_sp0_sync:
-    mov x0, #0
-    bl   put_exception
+    exception_handler_entry 0
 _curr_el_sp0_irq:
-    mov x0, #1
-    bl   put_exception
+    exception_handler_entry 1
 _curr_el_sp0_fiq:
-    mov x0, #2
-    bl   put_exception
+    exception_handler_entry 2
 _curr_el_sp0_serror:
-    mov x0, #3
-    bl   put_exception
+    exception_handler_entry 3
 
 _curr_el_spx_sync:
-    mov x0, #4
-    mrs x1, elr_el1
-    bl   put_exception
+    exception_handler_entry 4
 
 //在内核态时接收到irq，进入异常，
 //不使用单独的中断栈，使用当前任务的内核栈
@@ -153,11 +152,9 @@ _curr_el_spx_irq:
     kernel_exit 1
 
 _curr_el_spx_fiq:
-    mov x0, #6
-    bl   put_exception
+    exception_handler_entry 6
 _curr_el_spx_serror:
-    mov x0, #7
-    bl   put_exception
+    exception_handler_entry 7
 
 //el0进入的异常，系统调用
 _lower_el_aarch64_sync:
@@ -167,14 +164,16 @@ _lower_el_aarch64_sync:
     mov x21, #ESR_EC_SVC
     cmp x20, x21
     b.eq  el0_svc
-    mov x0, #8          //不是系统调用，错误处理
-    bl  put_exception
+
+    //不是系统调用，错误处理
+1:
+    exception_handler_entry 8
 
 el0_svc:
     ldr x9, =syscall_table
     mov x10,  #SYSCALL_NR
     cmp x8, x10
-    b.hs put_exception  //如果大于等于最大系统调用总数，错误处理
+    b.hs 1b             //如果大于等于最大系统调用总数，错误处理
     lsl x11, x8,  #3    //获得该系统调用函数在函数表中的偏移，一个函数槽为long，8B，所以左移3位
     add x11, x9, x11    //得到处理函数存放的地址
     ldr x12, [x11]      //得到处理函数
@@ -206,24 +205,18 @@ _lower_el_aarch64_irq:
     kernel_exit 0
 
 _lower_el_aarch64_fiq:
-    mov x0, #10
-    bl   put_exception
+    exception_handler_entry 10
 _lower_el_aarch64_serror:
-    mov x0, #11
-    bl   put_exception
+    exception_handler_entry 11
 
 _lower_el_aarch32_sync:
-    mov x0, #12
-    bl   put_exception
+    exception_handler_entry 12
 _lower_el_aarch32_irq:
-    mov x0, #13
-    bl   put_exception
+    exception_handler_entry 13
 _lower_el_aarch32_fiq:
-    mov x0, #14
-    bl   put_exception
+    exception_handler_entry 14
 _lower_el_aarch32_serror:
-    mov x0, #15
-    bl   put_exception
+    exception_handler_entry 15
 
 
 /*
