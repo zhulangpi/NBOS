@@ -87,5 +87,6 @@ struct buffer_head{
 
 
 extern void init_fs(void);
+extern void print_root_sb(void);
 
 #endif

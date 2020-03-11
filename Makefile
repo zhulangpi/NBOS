@@ -4,7 +4,7 @@
 
 ################################################
 IMAGE := NBOS.elf
-FILE_SYSTEM := flash1.img
+FILE_SYSTEM := pflash.img
 ROOT := $(shell pwd)
 
 CROSS_COMPILE = aarch64-elf-
@@ -55,15 +55,27 @@ $(IMAGE): $(OBJS)
 
 $(FILE_SYSTEM):
 	make all -C rootfs
-	dd if=/dev/zero of=flash1.img bs=4096 count=16384
-	dd if=rootfs/process1/user_code.bin of=flash1.img bs=4096 count=16384 conv=notrunc
-	dd if=rootfs/process2/user_code.bin of=flash1.img bs=4096 count=16384 seek=4 conv=notrunc
+	mkdir tmp
+	dd if=/dev/zero of=$(FILE_SYSTEM) bs=1024 count=65536
+	sudo losetup /dev/loop22 $(FILE_SYSTEM)
+	sudo mkfs.minix -1 /dev/loop22
+	sudo losetup -d /dev/loop22
+	sudo mount -o loop,rw $(FILE_SYSTEM) ./tmp
+#	sudo cp rootfs/process1/user_code.bin tmp
+#	sudo cp rootfs/process2/user_code.bin tmp
+	sudo umount tmp
+	rm -rf tmp
+#	dd if=rootfs/process1/user_code.bin of=flash1.img bs=4096 count=16384 conv=notrunc
+#	dd if=rootfs/process2/user_code.bin of=flash1.img bs=4096 count=16384 seek=4 conv=notrunc
 
 
-clean:
+distclean:
 	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log arch/virt.dts
 	make clean -C rootfs
 
+clean:
+	rm -f $(IMAGE) $(OBJS) *.list *.sym *.bin qemu.log arch/virt.dts
+	make clean -C rootfs
 
 .PHONY: all clean
 ############################################
@@ -101,7 +113,7 @@ qemu_cmd_args = \
 #反汇编可能有问题，不影响实际执行
 
 #-drive if=pflash,format=raw,file=$(FILE_SYSTEM),unit=1 \
-#填充第二块pflash，第一块flash如果非空会被用作boot ROM
+#填充第二块pflash，第一块flash如果非空会被用作boot ROM，每块pflash大小为64MB
 
 
 run: $(IMAGE) $(FILE_SYSTEM)

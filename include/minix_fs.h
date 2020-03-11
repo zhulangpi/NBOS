@@ -69,12 +69,34 @@ struct minix_inode {
 #define NAME_LEN    (30)
 //目录被实现为一种特殊的文件, 目录的数据由一个或多个dir_entry结构组成
 struct dir_entry {
-    unsigned short inode;   //文件的实际inode号
-    char name[NAME_LEN];    //文件的名字
+    __u16 inode;   //文件的实际inode号
+    char  name[NAME_LEN];    //文件的名字
 };
 
 
-extern struct minix_super_block* alloc_minix_sb(struct block_device *);
+/*
+ * minix super-block data in memory
+ */
+struct minix_sb_info {
+    unsigned long s_ninodes;
+    unsigned long s_nzones;
+    unsigned long s_imap_blocks;
+    unsigned long s_zmap_blocks;
+    unsigned long s_firstdatazone;
+    unsigned long s_log_zone_size;
+    unsigned long s_max_size;
+//    int s_dirsize;    32B
+//    int s_namelen;    30B
+    struct buffer_head ** s_imap;
+    struct buffer_head ** s_zmap;
+    struct buffer_head * s_sbh;
+    struct minix_super_block * s_ms;
+//    unsigned short s_mount_state;
+//    unsigned short s_version;
+};
 
+
+extern struct minix_sb_info* alloc_minix_sb(struct block_device *);
+extern void print_minix_sb(struct minix_sb_info *m_sb);
 
 #endif

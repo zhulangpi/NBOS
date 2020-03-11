@@ -8,6 +8,8 @@
 #include "board.h"
 #include "list.h"
 #include "soft_timer.h"
+#include "fs.h"
+
 
 char stack_init_task[STACK_SZ] __attribute__((section(".data.init_stack")));
 //task 0 and the first task in task_queue
@@ -36,6 +38,11 @@ void init_main()
     timer_init();
     init_timer();
 
+
+    init_fs();
+    print_root_sb();
+    
+    while(1);
     kthread_create(idle_main);
     copy_process(USER_PROCESS, PFLASH1_BASE, 16<<10);
     copy_process(USER_PROCESS, PFLASH1_BASE + (16<<10), 16<<10);
