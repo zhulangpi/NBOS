@@ -32,8 +32,9 @@ INIT = init/init_task.o
 KERNEL = kernel/task.o kernel/syscall.o kernel/soft_timer.o
 MM = mm/mm.o mm/kmalloc.o
 LIB = lib/lib.o lib/printf.o
+FS = fs/fs.o fs/minix_fs.o
 
-OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB)
+OBJS = $(ARCH) $(BOOT) $(INIT) $(KERNEL) $(MM) $(LIB) $(FS)
 
 LDSCRIPT = linker.ld
 

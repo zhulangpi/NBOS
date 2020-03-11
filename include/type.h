@@ -24,4 +24,13 @@
 #define NULL ((void *)0)
 #endif
 
+
+typedef unsigned long sector_t;
+
+typedef unsigned char   __u8;
+typedef unsigned short  __u16;
+typedef unsigned int    __u32;
+typedef unsigned long   __u64;
+
+
 #endif

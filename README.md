@@ -2,11 +2,10 @@
 小型学习用OS  
 硬件平台：QEMU模拟的ARMv8 A57虚拟机  
 
-ARMv8 裸机程序引用  
-https://github.com/MaciekBielski/bareMetalAarch64  
-https://github.com/NienfengYao/armv8-bare-metal  
 
 参考  
+https://github.com/MaciekBielski/bareMetalAarch64  
+https://github.com/NienfengYao/armv8-bare-metal  
 https://github.com/s-matyukevich/raspberry-pi-os  
 https://elixir.bootlin.com/linux/v2.6.24/source  
 https://github.com/labrick/linux-0.11  
@@ -22,14 +21,16 @@ NBOS是一个以Linux为参照的小型OS
 基于EL0/EL1异常级别的任务简单调度  
 中断控制器，定时器中断，串口打印  
 任务控制块，静态定义了init任务  
-堆的管理  
-系统调用  
+物理内存两级管理  
+系统调用机制  
 printf  
 MMU及虚存管理  
+用户进程及内核线程的创建与退出  
 ### 0.3 下一步待完成
-软件定时器  
-系统调用  
-delay  
+文件系统  
+补充系统调用  
+用户态页基于链表的管理  
+中断系统  
 ## 一、运行NBOS
 ### 1.1 搭建开发环境
 
@@ -94,7 +95,7 @@ https://github.com/qemu/qemu/blob/master/hw/arm/virt.c
 ### 3.1 数据结构
 #### 3.1.1 任务描述符
 
-用于描述并管理每一个任务，作为调度的基本单位  
+用于描述并管理一个任务，作为调度的基本单位  
 ```c
 /* 任务描述符 */  
 struct task_struct{
@@ -102,17 +103,23 @@ struct task_struct{
     int state;
     unsigned long preempt_count;
     struct mm_struct *mm;
+    struct list_head list;
+    unsigned int canary;            //任务描述符位于栈顶，如果该值被修改，则栈溢出
 };
 ```
-cpu_context:   用于存放任务上下文，目前主要是CPU寄存器组的内容  
-state:         任务状态  
+cpu_context  : 用于存放任务上下文，目前主要是CPU寄存器组的内容  
+state        : 任务状态  
 preempt_count: 抢占计数  
 mm           : 地址空间描述符  
+list         : 任务链表  
+canary       : 栈溢出检测  
 
 任务的内核栈，满递减栈，地址最低处保存对应任务描述符的地址。  
 如此，通过sp可以间接获得任务描述符  
 ### 3.2 任务调度
-暂时是一个基于周期定时器和数组遍历的简单时间片轮转  
+暂时是一个基于链表遍历的Round-Robin  
+以init任务作为链表头形成一个针对CPU的任务队列  
+队列上任务的状态任意  
 
 ## 四、内存管理
 参考资料：  
@@ -133,16 +140,24 @@ https://github.com/tina0405/raspberry-pi3-mini-os/blob/a5b4bfcc1211f3a7e073ead3b
 |    510   | 0x4008 9ff0  | 0xffff 0000 3fc0 0000 | 0x0900 0000 | 0x401 |
 |    511   |              | 0xffff 0000 3fe0 0000 |             |       |
 
+用户空间  
+支持按页映射与基于数组的反向映射  
+
+### 4.2 页分配
+暂时只支持一页的分配与回收  
+
+### 4.3 类slab分配
+
 
 ## 五、异常处理
+支持系统调用、EL0/EL1外部中断处理、异常打印  
+待完善异常栈的打印  
 
 ## 六、设备驱动
-### 6.0 引用前人代码
-https://github.com/MaciekBielski/bareMetalAarch64  
-https://github.com/NienfengYao/armv8-bare-metal  
-
+目前没有设备模型及驱动框架  
 ### 6.1 定时器
-核内定时器，产生周期中断，用于调度  
+核内定时器，产生周期中断，作为基本的系统时钟源和调度时钟  
+
 ### 6.2 中断控制器GIC
 
 ### 6.3 串口
