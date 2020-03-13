@@ -39,6 +39,8 @@ static inline void init_bucket_desc()
 	int	i;
 	
 	first = bdesc = (struct bucket_desc *)get_free_page(GFP_KERNEL);
+    atomic_set( &(pa_to_page(__pa(first))->flags) , PG_kmalloc);
+
 	if (!bdesc)
 		printf("Out of memory in init_bucket_desc()\n");
 	for (i = PAGE_SIZE/sizeof(struct bucket_desc); i > 1; i--) {
@@ -154,6 +156,7 @@ found:
 				printf("malloc bucket chains corrupted\n");
 			bdir->chain = bdesc->next;
 		}
+        atomic_set( &(pa_to_page(__pa(bdesc->page))->flags), PG_free);
 		free_page( bdesc->page );
 		bdesc->next = free_bucket_desc;
 		free_bucket_desc = bdesc;

@@ -61,7 +61,7 @@ $(FILE_SYSTEM):
 	sudo mkfs.minix -1 /dev/loop22
 	sudo losetup -d /dev/loop22
 	sudo mount -o loop,rw $(FILE_SYSTEM) ./tmp
-#	sudo cp rootfs/process1/user_code.bin tmp
+	sudo cp rootfs/process1/user_code.bin tmp
 #	sudo cp rootfs/process2/user_code.bin tmp
 	sudo umount tmp
 	rm -rf tmp

@@ -38,9 +38,8 @@ void init_main()
     timer_init();
     init_timer();
 
-
     init_fs();
-    print_root_sb();
+    print_root_bdev();
     
     while(1);
     kthread_create(idle_main);

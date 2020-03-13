@@ -16,10 +16,12 @@ zone:  0           1              2             2 + imap_blk        ...         
 1 zone = 2 block(physical) = 1024 byte
 其中，
     inode bitmap最低位置为1，从第一位才开始使用，因此inodes zone从1开始计数
+    zone bitmap 最低位置为1，从第一位才开始使用，因此data zone  从1开始计数
 */
 
 
-#define SB_OFFSET  (1)
+#define SB_OFFSET   (1)
+#define ROOT_INODE  (1)     //inode从1开始计数
 
 /*
  * minix super-block data on disk
@@ -50,11 +52,18 @@ inode mode:
     bit15: 常规文件
     当bit13, bit14 都设置时，代表块设备文件
 */
+#define DIR_BIT         (14)
+#define FILE_BIT        (15)
+
+#define IS_DIR(mode)    ((1<<DIR_BIT)&mode)
+#define IS_FILE(mode)   ((1<<FILE_BIT)&mode)
+
 
 /*
  * This is the original minix inode layout on disk.
  * Note the 8-bit gid and atime and ctime.
  */
+//32Byte
 struct minix_inode {
     __u16 i_mode;
     __u16 i_uid;    //文件属主的用户ID，为0 表示为root
@@ -67,11 +76,17 @@ struct minix_inode {
 
 
 #define NAME_LEN    (30)
-//目录被实现为一种特殊的文件, 目录的数据由一个或多个dir_entry结构组成
+// 目录被实现为一种特殊的文件, 目录的数据由一个或多个dir_entry结构组成
+// 32B
 struct dir_entry {
-    __u16 inode;   //文件的实际inode号
-    char  name[NAME_LEN];    //文件的名字
+    __u16 inode;            //文件的实际inode号
+    char  name[NAME_LEN];   //文件的名字
 };
+
+#define INODE_NO_SZ             (2)                     //磁盘上存储的inode号的大小
+#define NR_INODE_NO_PER_BLOCK   (BLOCK_SZ/INODE_NO_SZ)  //512
+#define BLK_NO_SZ               (2)                     //磁盘上存储的blk号的大小
+#define NR_BLK_NO_PER_BLOCK     (BLOCK_SZ/BLK_NO_SZ)    //512
 
 
 /*
@@ -96,7 +111,24 @@ struct minix_sb_info {
 };
 
 
+#define I_SZ        (sizeof(struct minix_inode))    //32Byte
+#define I_PER_BLK   (BLOCK_SZ/I_SZ)                 //1024/32==32
+
+//根据inode号得到对应inode结构所在的块号，inode号从1开始计数
+static inline unsigned long inode_to_blk(struct minix_sb_info *m_sbi, unsigned long inode_no)
+{
+    unsigned long blk_no;
+
+    blk_no = (inode_no-1)/I_PER_BLK;
+    return 2 + m_sbi->s_imap_blocks + m_sbi->s_zmap_blocks + blk_no;
+}
+
+//根据inode号得到对应inode结构在所在块内的偏移，字节为单位
+#define inode_offset(inode)    ((inode-1)%I_PER_BLK * I_SZ)
+
+
 extern struct minix_sb_info* alloc_minix_sb(struct block_device *);
 extern void print_minix_sb(struct minix_sb_info *m_sb);
+extern void print_minix(struct block_device *bd);
 
 #endif

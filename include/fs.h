@@ -18,14 +18,13 @@ struct file{
 // 对任意inode的字节的读写都会转换为对内存中一个block的读写，
 // block再以扇区为单位读写磁盘
 // 两次转换：
-// 1. inode offset -> block offset
+// 1. inode offset -> block && offset
 // 2. block -> 磁盘sector
 
-// 每个block用buffer_head来描述
-// buffer_head记录该block对应于inode的offset，同一inode的buffer_head根据offset顺序链接
+// 每个inode存放了其所有的block号，只要通过block号得到buffer_head就能得到block
 // 解决inode offset -> block offset的转换
 
-// buffer_head记录磁盘扇区号
+// buffer_head记录磁盘块号
 // 解决block -> sector 的转换
 
 
@@ -33,27 +32,28 @@ struct block_device;
 struct buffer_head;
 
 struct inode{
-    struct list_head bh_list;       //用于链接该inode的所有buffer_head
+    struct list_head list;       //用于链接同一block_device的所有inode
 //    struct inode_operations *i_op;
     struct block_device *bd;
-    void *i_private;
+    void *i_private;            //指向具体文件系统的inode
 };
 
 
 struct super_block{
 //    struct super_block_operations *s_op;
     struct block_device *bd;
-    void *s_private;
+    void *s_private;            //指向具体文件系统的super_block
 };
 
 
 //block必须>=sector
 struct blkdev_operations{
-    int (*read)(sector_t, struct buffer_head *bh);    //读一个完整block
-    int (*write)(sector_t, struct buffer_head *bh);   //写一个完整block
-    int (*direct_read) (sector_t sec, unsigned long *addr);     //直接读一个block
-    int (*direct_write) (sector_t sec, unsigned long *addr);    //直接写一个block
+    int (*read) (sector_t sect, struct buffer_head *bh);    //读一个完整block
+    int (*write) (sector_t sect, struct buffer_head *bh);   //写一个完整block
+    int (*direct_read) (sector_t sect, unsigned long *addr);     //直接读一个block
+    int (*direct_write) (sector_t sect, unsigned long *addr);    //直接写一个block
 };
+
 
 //管理一个物理块设备，实现对其读写，只支持一个分区
 struct gendisk{
@@ -75,18 +75,50 @@ struct block_device{
 };
 
 
+enum bh_state_bits {
+    BH_Uptodate,    /* Contains valid data */
+    BH_Dirty,   /* Is dirty */
+    BH_Lock,    /* Is locked */
+    BH_Req,     /* Has been submitted for I/O */
+    BH_Uptodate_Lock,/* Used by the first bh in a page, to serialise
+              * IO completion of other buffers in the page
+              */
+
+    BH_Mapped,  /* Has a disk mapping */
+    BH_New,     /* Disk mapping was newly created by get_block */
+    BH_Async_Read,  /* Is under end_buffer_async_read I/O */
+    BH_Async_Write, /* Is under end_buffer_async_write I/O */
+    BH_Delay,   /* Buffer is not yet allocated on disk */
+    BH_Boundary,    /* Block is followed by a discontiguity */
+    BH_Write_EIO,   /* I/O error on write */
+    BH_Ordered, /* ordered write */
+    BH_Eopnotsupp,  /* operation not supported (barrier) */
+    BH_Unwritten,   /* Buffer is allocated on disk but not written */
+
+    BH_PrivateStart,/* not a state bit, but the first bit available
+             * for private allocation by other entities
+             */
+};
+
+
 //管理一个内存block
 struct buffer_head{
-    struct list_head list;      //链接同一inode的buffer_head
-    unsigned long inode_offset; //记录该block首地址对应在inode中的offset
-    sector_t sector_no;         //默认扇区大小==BLOCK_SZ，记录该block对应磁盘上的sector号
-    struct page* pg;            //该block存放于该page
-    unsigned long page_offset;  //该block在page中的offset
+    unsigned long b_state;
+    void* data;                 //实际的block数据
+    struct list_head lru;       //链接所有的buffer_head
     struct block_device *bd;    //该block对应的块设备，用于读写访问
+    unsigned long blk_no;         //默认扇区大小==BLOCK_SZ，记录该block在磁盘上对应的block号
+//    int count;                  //user using this block
+// page cache相关字段
+//    struct buffer_head *b_this_page;/* circular list of page's buffers */
+//    struct page* pg;            //该block存放于该page
+//    unsigned long page_offset;  //该block在page中的offset
 };
 
 
 extern void init_fs(void);
-extern void print_root_sb(void);
+extern void print_root_bdev(void);
+extern struct buffer_head* get_blk(unsigned long blk_no);
+
 
 #endif

@@ -5,6 +5,7 @@
 #include "type.h"
 #include "atomic.h"
 #include "printf.h"
+#include "fs.h"
 #endif
 
 
@@ -45,15 +46,25 @@
 #define GFP_USER                (1 << 1)
 
 
+#define PG_free                 (0)         //空闲
+#define PG_kmalloc              (1)         //该页被用于kmalloc
+#define PG_buffer_head          (2)         //该页被用作buffer_head管理的cache或buffer
+
 #ifndef _ASSEMBLY_
 struct page {
-	atomic_t count;
-    unsigned long vaddr;
+    atomic_t flags;
+	atomic_t count;         //引用计数，为1时表示被分配但可以释放
+    struct buffer_head *fbh;       //this page's first buffer_head
+
+    struct list_head lru;   //用作page cache时，链接所有的page(暂不实现page cache)
+//    unsigned long vaddr;  //计划用于反向映射，暂时未实现
 };
+
 extern struct page mem_map[PAGING_PAGES];
 #endif
 
 //PFN: 从可分配的分页内存开始，第一页PFN = 0
+//所有的物理页都可以通过内核地址来访问，全都已经建立好了映射
 #define pa_to_pfn(pa)           (((pa)-LOW_MEM) >> PAGE_SHIFT)
 #define pfn_to_pa(pfn)          ((pfn << PAGE_SHIFT) + LOW_MEM)
 #define page_to_pfn(page)       ((unsigned long)((page) - mem_map))
