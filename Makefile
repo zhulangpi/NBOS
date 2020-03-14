@@ -69,6 +69,9 @@ $(FILE_SYSTEM):
 #	dd if=rootfs/process2/user_code.bin of=flash1.img bs=4096 count=16384 seek=4 conv=notrunc
 
 
+line:
+	find . "(" -name "*.S" -or -name "*.c" -or -name "*.h" ")" -print | xargs wc -l
+
 distclean:
 	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log arch/virt.dts
 	make clean -C rootfs

@@ -31,18 +31,35 @@ struct file{
 struct block_device;
 struct buffer_head;
 
+
+struct inode;
+
+struct inode_operations {
+    struct inode* (*lookup)(struct inode *dir, char *name);  //根据当前目录inode和路径文件名搜索inode
+
+};
+
 struct inode{
     struct list_head list;       //用于链接同一block_device的所有inode
-//    struct inode_operations *i_op;
-    struct block_device *bd;
-    void *i_private;            //指向具体文件系统的inode
+    struct inode_operations *i_op;
+    struct super_block *sb;
+//    void *i_private;            //fs or device private pointer ,指向具体文件系统的inode
+};
+
+
+struct super_operations{
+    struct inode *(*alloc_inode)(struct super_block *sb);
+//    void (*destroy_inode)(struct inode *);
+//    int (*write_inode) (struct inode *, struct writeback_control *wbc);
+//    void (*put_super) (struct super_block *);
 };
 
 
 struct super_block{
-//    struct super_block_operations *s_op;
+    struct super_operations *s_op;
     struct block_device *bd;
-    void *s_private;            //指向具体文件系统的super_block
+    void  *s_fs_info;           /* Filesystem private info */
+    struct list_head s_inodes;    //所有inode的链表
 };
 
 
@@ -50,8 +67,6 @@ struct super_block{
 struct blkdev_operations{
     int (*read) (sector_t sect, struct buffer_head *bh);    //读一个完整block
     int (*write) (sector_t sect, struct buffer_head *bh);   //写一个完整block
-    int (*direct_read) (sector_t sect, unsigned long *addr);     //直接读一个block
-    int (*direct_write) (sector_t sect, unsigned long *addr);    //直接写一个block
 };
 
 
@@ -71,7 +86,6 @@ struct block_device{
     unsigned long nr_blk;   //这个块设备一共多少个block，内核block大小固定为1024B
     struct super_block *sb; //分区超级块
     struct gendisk *genhd;  //物理块设备
-    struct list_head inode;   //该块设备的所有inode的链表
 };
 
 
@@ -118,7 +132,7 @@ struct buffer_head{
 
 extern void init_fs(void);
 extern void print_root_bdev(void);
-extern struct buffer_head* get_blk(unsigned long blk_no);
+extern struct buffer_head* get_blk(struct block_device *bd, unsigned long blk_no);
 
 
 #endif

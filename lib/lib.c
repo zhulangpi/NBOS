@@ -2,6 +2,23 @@
 #include "type.h"
 #include "board.h"
 
+//字典序比较两字符串大小
+int strcmp(const char * src, const char * dst)
+{
+    int ret = 0 ;
+    while(!(ret=*src-*dst)&&*dst)   //相等且没有结束
+        ++src, ++dst;
+    return( ret );
+}
+
+unsigned int strlen(const char*str)
+{
+    unsigned int len=0;
+    while((*str++)!='\0') 
+        len++;
+    return len;
+}
+
 void *memset(void *s, int c, unsigned long n)
 {
     if (NULL == s || n < 0)

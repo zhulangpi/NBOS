@@ -3,6 +3,7 @@
 
 #include "type.h"
 #include "fs.h"
+#include "list.h"
 
 #define BLOCK_SZ  (1024)
 
@@ -20,8 +21,8 @@ zone:  0           1              2             2 + imap_blk        ...         
 */
 
 
-#define SB_OFFSET   (1)
-#define ROOT_INODE  (1)     //inode从1开始计数
+#define MINIX_SB_OFFSET   (1)
+#define MINIX_ROOT_INO    (1)     //inode从1开始计数
 
 /*
  * minix super-block data on disk
@@ -111,24 +112,33 @@ struct minix_sb_info {
 };
 
 
+/*
+ * minix fs inode data in memory
+ */
+struct minix_inode_info {
+    struct minix_inode d_inode;
+    struct inode vfs_inode;
+};
+
+
 #define I_SZ        (sizeof(struct minix_inode))    //32Byte
 #define I_PER_BLK   (BLOCK_SZ/I_SZ)                 //1024/32==32
+#define DIR_PER_BLK  (BLOCK_SZ/sizeof(struct dir_entry))
 
-//根据inode号得到对应inode结构所在的块号，inode号从1开始计数
-static inline unsigned long inode_to_blk(struct minix_sb_info *m_sbi, unsigned long inode_no)
+
+static inline struct minix_sb_info *minix_sb(struct super_block *sb)
 {
-    unsigned long blk_no;
-
-    blk_no = (inode_no-1)/I_PER_BLK;
-    return 2 + m_sbi->s_imap_blocks + m_sbi->s_zmap_blocks + blk_no;
+    return sb->s_fs_info;
 }
 
-//根据inode号得到对应inode结构在所在块内的偏移，字节为单位
-#define inode_offset(inode)    ((inode-1)%I_PER_BLK * I_SZ)
+static inline struct minix_inode_info *minix_i(struct inode *inode)
+{
+    return list_entry(inode, struct minix_inode_info, vfs_inode);
+}
 
 
-extern struct minix_sb_info* alloc_minix_sb(struct block_device *);
-extern void print_minix_sb(struct minix_sb_info *m_sb);
+extern int minix_fill_super(struct super_block *);
+extern struct inode* minix_iget(struct super_block *sb, unsigned long ino);
 extern void print_minix(struct block_device *bd);
 
 #endif
