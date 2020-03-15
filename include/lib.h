@@ -12,6 +12,7 @@
 
 extern int strcmp(const char * src, const char * dst);
 extern unsigned int strlen(const char*str);
+extern char * strcpy(char * dst, const char * src);
 extern void *memset(void *s, int c, unsigned long n);
 extern void memcpy(void *dst, void *src, unsigned long size);
 extern void putc(void* p, char c);

@@ -6,7 +6,7 @@
 int strcmp(const char * src, const char * dst)
 {
     int ret = 0 ;
-    while(!(ret=*src-*dst)&&*dst)   //相等且没有结束
+    while((!(ret=*src-*dst))&&*dst)   //相等且没有结束
         ++src, ++dst;
     return( ret );
 }
@@ -17,6 +17,18 @@ unsigned int strlen(const char*str)
     while((*str++)!='\0') 
         len++;
     return len;
+}
+
+char * strcpy(char * dst, const char * src)
+{
+    char *dst_cpy;
+
+    if ((NULL==dst) || (NULL==src)) 
+        return NULL;
+
+    dst_cpy = dst; 
+    while ((*dst++=*src++)!='\0'); 
+    return dst_cpy;
 }
 
 void *memset(void *s, int c, unsigned long n)

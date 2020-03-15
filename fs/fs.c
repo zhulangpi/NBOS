@@ -9,6 +9,9 @@
 //系统的根设备，根设备的根路径对应系统的"/"
 struct block_device *root_bdev = NULL;
 struct inode *root_inode = NULL;
+//定义所有buffer_head的LRU链表的头节点
+LIST_HEAD(bh_head);
+
 
 static int pflash_read(sector_t, struct buffer_head *bh);
 static int pflash_write(sector_t, struct buffer_head *bh);
@@ -28,6 +31,7 @@ static struct gendisk pflash = {
 };
 
 
+
 void init_fs(void)
 {
     root_bdev = (struct block_device *)kmalloc(sizeof(struct block_device));
@@ -38,6 +42,8 @@ void init_fs(void)
     minix_fill_super(root_bdev->sb);
 
     root_inode = minix_iget(root_bdev->sb, MINIX_ROOT_INO);
+
+
 }
 
 
@@ -55,15 +61,11 @@ static int pflash_write(sector_t sect, struct buffer_head *bh)
 }
 
 
-//定义所有buffer_head的LRU链表的头节点
-LIST_HEAD(bh_head);
-
-
 //为指定的块分配一个buffer_head和block
 //现在的block从kmallc中分配，如果实现page cache，
 //可以两者结合，从page cache层来管理
 //利用page cache，读写一个文件应以页为单位，再利用buffer head来处理对设备的写入
-struct buffer_head* alloc_buffer_head( struct block_device *bd, unsigned long blk_no)
+struct buffer_head* bread( struct block_device *bd, unsigned long blk_no)
 {
     struct buffer_head *bh;
 
@@ -93,14 +95,14 @@ struct buffer_head* get_blk(struct block_device *bd, unsigned long blk_no)
             return bh;
     }
     //目前不存在，新建
-    bh = alloc_buffer_head(bd, blk_no);
+    bh = bread(bd, blk_no);
 
     return bh;
 }
 
 
 //先同步磁盘，再分配释放block和buffer head
-int delete_buffer_head(struct buffer_head * bh)
+int brelse(struct buffer_head * bh)
 {
     if(bh->b_state == BH_Dirty)
         bh->bd->genhd->blkdev_op->write( bh->blk_no, bh ); 
@@ -113,12 +115,114 @@ int delete_buffer_head(struct buffer_head * bh)
 }
 
 
-//根据当前路径的inode及文件路径全名找到文件inode
-struct inode* namei(struct inode *cur_dir, char *path)
+
+// path = "///asd.c/sad"
+// offset = 3 <= "///"
+// return = 5 <= "asd.c"
+static int path_len( const char *path, unsigned long *offset)
+{
+    int i = 0;
+    
+    *offset = 0;
+    if(path==NULL || *path == '\0')
+        return 0;
+
+    while(*path=='/'){
+        path++;
+        (*offset)++;
+    }
+
+    while(*path!= '/' && *path!='\0'){
+        path++;
+        i++;
+    }
+    return i;
+}
+
+//根据当前路径的inode及文件路径名找到文件inode
+struct inode* namei(struct inode *cur_dir, const char *path)
+{
+    struct inode* dir;
+    int length ;
+    char *name;
+    unsigned long offset;
+    zlp_log();
+    if(path==NULL){
+        return NULL;
+    }else if(*path == '/'){   //从根目录开始计算
+        dir = root_inode;
+    }else if(cur_dir==NULL){
+        return NULL;
+    }else{
+        dir = cur_dir;
+    }
+
+    zlp_log();
+    if(*path == '.' && *(path+1)=='/'){
+        path+=2;
+    }
+    zlp_log();
+
+    name = (char*)kmalloc(strlen(path) + sizeof('\0'));
+    zlp_log();
+
+    while( (length=path_len(path, &offset))!=0 ){
+    zlp_log();
+        path += offset;
+        memcpy(name, (void*)path, length);
+        path += length;
+        *(name+length) = '\0';
+    zlp_log();
+        
+        dir = dir->i_op->lookup(dir, name);
+    zlp_log();
+        if(dir==NULL)
+            break;
+    }
+    zlp_log();
+
+    kfree(name);
+
+    return dir;
+}
+
+
+static struct inode* get_new_inode(struct super_block *sb, unsigned long ino)
+{
+    struct inode *inode;
+
+    inode = sb->s_op->alloc_inode(sb);
+
+    inode->sb = sb;
+    inode->i_ino = ino;
+    inode->i_op = NULL;
+    inode->i_state = I_NEW;
+    list_add(&inode->list, &sb->s_inodes);
+
+    return inode;
+}
+
+
+struct inode* get_inode(struct super_block *sb, unsigned long ino)
+{
+    struct inode* inode;    
+    struct list_head *pos;
+
+    list_for_each(pos, &sb->s_inodes){
+        inode = list_entry(pos, struct inode, list);
+        if(inode->i_ino == ino)
+            return inode;
+    }
+
+    return get_new_inode(sb, ino);
+}
+
+
+//free内存中的inode对象并写回磁盘
+void generic_drop_inode(struct inode *inode)
 {
 
 
-    return NULL;
 }
 
 

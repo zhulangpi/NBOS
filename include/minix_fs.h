@@ -53,11 +53,6 @@ inode mode:
     bit15: 常规文件
     当bit13, bit14 都设置时，代表块设备文件
 */
-#define DIR_BIT         (14)
-#define FILE_BIT        (15)
-
-#define IS_DIR(mode)    ((1<<DIR_BIT)&mode)
-#define IS_FILE(mode)   ((1<<FILE_BIT)&mode)
 
 
 /*
@@ -121,8 +116,7 @@ struct minix_inode_info {
 };
 
 
-#define I_SZ        (sizeof(struct minix_inode))    //32Byte
-#define I_PER_BLK   (BLOCK_SZ/I_SZ)                 //1024/32==32
+#define MINIX_INODES_PER_BLOCK ((BLOCK_SZ)/(sizeof (struct minix_inode))) //1024/32=32
 #define DIR_PER_BLK  (BLOCK_SZ/sizeof(struct dir_entry))
 
 

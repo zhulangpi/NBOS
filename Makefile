@@ -69,6 +69,14 @@ $(FILE_SYSTEM):
 #	dd if=rootfs/process2/user_code.bin of=flash1.img bs=4096 count=16384 seek=4 conv=notrunc
 
 
+mount:
+	mkdir tmp
+	sudo mount -o loop,rw $(FILE_SYSTEM) ./tmp
+
+umount:
+	sudo umount tmp
+	rm -rf tmp
+
 line:
 	find . "(" -name "*.S" -or -name "*.c" -or -name "*.h" ")" -print | xargs wc -l
 

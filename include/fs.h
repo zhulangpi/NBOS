@@ -5,6 +5,46 @@
 #include "list.h"
 #include "mm.h"
 
+
+#define S_IFMT  00170000
+#define S_IFSOCK 0140000
+#define S_IFLNK  0120000
+#define S_IFREG  0100000
+#define S_IFBLK  0060000
+#define S_IFDIR  0040000
+#define S_IFCHR  0020000
+#define S_IFIFO  0010000
+#define S_ISUID  0004000
+#define S_ISGID  0002000
+#define S_ISVTX  0001000
+
+#define S_ISLNK(m)  (((m) & S_IFMT) == S_IFLNK)
+#define S_ISREG(m)  (((m) & S_IFMT) == S_IFREG)
+#define S_ISDIR(m)  (((m) & S_IFMT) == S_IFDIR)
+#define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)
+#define S_ISBLK(m)  (((m) & S_IFMT) == S_IFBLK)
+#define S_ISFIFO(m) (((m) & S_IFMT) == S_IFIFO)
+#define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
+
+#define S_IRWXU 00700
+#define S_IRUSR 00400
+#define S_IWUSR 00200
+#define S_IXUSR 00100
+
+#define S_IRWXG 00070
+#define S_IRGRP 00040
+#define S_IWGRP 00020
+#define S_IXGRP 00010
+
+#define S_IRWXO 00007
+#define S_IROTH 00004
+#define S_IWOTH 00002
+#define S_IXOTH 00001
+
+
+#define I_NEW           (8)
+
+
 /* 暂时不实现
 struct file_operations{
 }
@@ -40,8 +80,18 @@ struct inode_operations {
 };
 
 struct inode{
-    struct list_head list;       //用于链接同一block_device的所有inode
-    struct inode_operations *i_op;
+    unsigned long i_mode;
+    unsigned long i_uid;
+    unsigned long i_gid;
+    unsigned long i_size;
+    unsigned long i_atime;
+    unsigned long i_mtime;
+    unsigned long i_ctime;
+    unsigned long i_state;
+
+    unsigned long i_ino;
+    struct list_head list;       //用于链接同一super_block的所有inode
+    const struct inode_operations *i_op;
     struct super_block *sb;
 //    void *i_private;            //fs or device private pointer ,指向具体文件系统的inode
 };
@@ -49,14 +99,14 @@ struct inode{
 
 struct super_operations{
     struct inode *(*alloc_inode)(struct super_block *sb);
-//    void (*destroy_inode)(struct inode *);
+    void (*destroy_inode)(struct inode *);
 //    int (*write_inode) (struct inode *, struct writeback_control *wbc);
-//    void (*put_super) (struct super_block *);
+    void (*put_super) (struct super_block *);
 };
 
 
 struct super_block{
-    struct super_operations *s_op;
+    const struct super_operations *s_op;
     struct block_device *bd;
     void  *s_fs_info;           /* Filesystem private info */
     struct list_head s_inodes;    //所有inode的链表
@@ -133,6 +183,9 @@ struct buffer_head{
 extern void init_fs(void);
 extern void print_root_bdev(void);
 extern struct buffer_head* get_blk(struct block_device *bd, unsigned long blk_no);
-
+extern struct buffer_head* bread( struct block_device *bd, unsigned long blk_no);
+extern int brelse(struct buffer_head * bh);
+extern struct inode* namei(struct inode *cur_dir, const char *path);
+extern struct inode* get_inode(struct super_block *sb, unsigned long ino);
 
 #endif

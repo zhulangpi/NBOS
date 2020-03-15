@@ -4,18 +4,19 @@
 #include "printf.h"
 #include "list.h"
 
-struct inode_operations minix_inode_operations;
-
+static const struct inode_operations minix_inode_operations;
+static const struct inode_operations minix_dir_inode_operations;
+static const struct super_operations minix_sops;
 
 //根据inode号得到对应inode结构在所在块内的偏移，字节为单位
-#define inode_offset(inode)    ((inode-1)%I_PER_BLK * I_SZ)
+#define inode_offset(inode)    ((inode-1)%MINIX_INODES_PER_BLOCK * I_SZ)
 
 //根据inode号得到对应inode结构所在的块号，inode号从1开始计数
 static inline unsigned long ino_to_blk_no(struct minix_sb_info *m_sbi, unsigned long inode_no)
 {
     unsigned long blk_no;
 
-    blk_no = (inode_no-1)/I_PER_BLK;
+    blk_no = (inode_no-1)/MINIX_INODES_PER_BLOCK;
     return 2 + m_sbi->s_imap_blocks + m_sbi->s_zmap_blocks + blk_no;
 }
 
@@ -67,6 +68,7 @@ int minix_fill_super(struct super_block *sb)
     m_sbi->s_sbh            = bh;
 
     sb->s_fs_info = m_sbi;
+    sb->s_op = &minix_sops;
     INIT_LIST_HEAD(&sb->s_inodes);
     
     init_minix_bitmap(sb);
@@ -75,29 +77,68 @@ int minix_fill_super(struct super_block *sb)
 }
 
 
+static struct minix_inode * minix_raw_inode(struct super_block *sb, unsigned long ino, struct buffer_head **bh)
+{
+    int block;
+    struct minix_sb_info *sbi = minix_sb(sb);
+    struct minix_inode *p; 
+
+    if (!ino || ino > sbi->s_ninodes) {
+        printf("Bad inode number: %lu is out of range\n", ino);
+        return NULL;
+    }
+    ino--;
+    block = 2 + sbi->s_imap_blocks + sbi->s_zmap_blocks + ino / MINIX_INODES_PER_BLOCK;
+    *bh = bread(sb->bd, block);
+    if (!*bh) {
+        printf("Unable to read inode block\n");
+        return NULL;
+    }
+    p = (void *)(*bh)->data;
+    return p + ino % MINIX_INODES_PER_BLOCK;
+}
+
+
 //根据inode号得到一个minix格式设备的通用inode结构
 struct inode * minix_iget(struct super_block *sb, unsigned long ino)
 {
-    unsigned long blk_no;
     struct buffer_head *bh;
     struct minix_inode_info *m_mi;
+    struct inode* inode;
+    struct minix_inode *d_inode;
 
     if(ino==0)
         return NULL;
 
-    m_mi = (struct minix_inode_info*)kmalloc(sizeof(struct minix_inode_info));
+    inode = get_inode(sb, ino);
 
-    blk_no = ino_to_blk_no( (struct minix_sb_info*)sb->s_fs_info, ino);
+    if(inode->i_state & I_NEW){
+        m_mi = list_entry(inode, struct minix_inode_info, vfs_inode);
 
-    bh = get_blk(sb->bd, blk_no);
+        d_inode = minix_raw_inode( sb, ino, &bh );
 
-    memcpy( &m_mi->d_inode, bh->data + inode_offset(ino), sizeof(struct minix_inode) );
+        memcpy( &m_mi->d_inode, d_inode, sizeof(struct minix_inode) );
 
-    m_mi->vfs_inode.i_op = &minix_inode_operations;
-    m_mi->vfs_inode.sb = sb;
-    list_add( &(m_mi->vfs_inode.list), &sb->s_inodes);
+        inode->i_mode = d_inode->i_mode;
+        inode->i_uid = d_inode->i_uid;
+        inode->i_gid = d_inode->i_gid;
+        inode->i_size = d_inode->i_size;
+        inode->i_atime = d_inode->i_time;
+        inode->i_ctime = d_inode->i_time;
+        inode->i_mtime = d_inode->i_time;
 
-    return &m_mi->vfs_inode;
+        if(S_ISDIR(inode->i_mode)){
+            inode->i_op = &minix_dir_inode_operations;
+        }else if(S_ISREG(inode->i_mode)){
+            inode->i_op = &minix_inode_operations;
+        }else{
+           // inode->i_op = &minix_inode_operations;
+        }
+
+
+        inode->i_state &= ~I_NEW;
+    }
+    return inode;
 }
 
 
@@ -139,7 +180,7 @@ static struct inode* minix_lookup(struct inode* dir, char *name)
     struct dir_entry *de;
     unsigned long i;
 
-    if(!IS_DIR(d_inode->i_mode))  //在非目录中查找文件
+    if(!S_ISDIR(d_inode->i_mode))  //在非目录中查找文件
         return NULL;
 
     if( strlen(name) > NAME_LEN)
@@ -151,8 +192,9 @@ static struct inode* minix_lookup(struct inode* dir, char *name)
 
         for(i=0;i<DIR_PER_BLK;i++){
             de++;
-            if( strcmp(name, de->name)==0)
+            if( strcmp(name, de->name)==0){
                 return minix_iget( dir->sb, de->inode);
+            }
         }; 
     }
 
@@ -160,9 +202,75 @@ static struct inode* minix_lookup(struct inode* dir, char *name)
 }
 
 
-struct inode_operations minix_inode_operations = {
+static const struct inode_operations minix_inode_operations = {
+
+    .lookup = &minix_lookup ,
+};
+
+
+static const struct inode_operations minix_dir_inode_operations = {
     .lookup = &minix_lookup ,
 
+};
+
+/*
+const struct inode_operations minix_dir_inode_operations = { 
+    .create     = minix_create,
+    .lookup     = minix_lookup,
+    .link       = minix_link,
+    .unlink     = minix_unlink,
+    .symlink    = minix_symlink,
+    .mkdir      = minix_mkdir,
+    .rmdir      = minix_rmdir,
+    .mknod      = minix_mknod,
+    .rename     = minix_rename,
+    .getattr    = minix_getattr,
+};
+*/
+
+static struct inode *minix_alloc_inode(struct super_block *sb)
+{
+    struct minix_inode_info *ei;
+    ei = (struct minix_inode_info *)kmalloc(sizeof(struct minix_inode_info));
+    if (!ei)
+        return NULL;
+    return &ei->vfs_inode;
+}
+
+static void minix_destroy_inode(struct inode* inode)
+{
+    if(inode==NULL)
+        return ;
+
+    kfree(minix_i(inode));
+}
+
+
+static void minix_put_super(struct super_block *sb)
+{
+    int i;
+    struct minix_sb_info *sbi = minix_sb(sb);
+
+    for (i = 0; i < sbi->s_imap_blocks; i++)
+        brelse(sbi->s_imap[i]);
+    for (i = 0; i < sbi->s_zmap_blocks; i++)
+        brelse(sbi->s_zmap[i]);
+    brelse (sbi->s_sbh);
+    kfree(sbi->s_imap);
+    kfree(sbi->s_zmap);
+    sb->s_fs_info = NULL;
+    kfree(sbi);
+}
+
+
+static const struct super_operations minix_sops = { 
+    .alloc_inode    = minix_alloc_inode,
+    .destroy_inode  = minix_destroy_inode,
+//    .write_inode    = minix_write_inode,
+//    .evict_inode    = minix_evict_inode,
+    .put_super  = minix_put_super,
+//    .statfs     = minix_statfs,
+//    .remount_fs = minix_remount,
 };
 
 
@@ -242,13 +350,22 @@ void print_minix(struct block_device *bd)
     print_dir_entries( get_blk(bd, 696) );
     print_minix_inode(bd, MINIX_ROOT_INO);
     print_minix_inode(bd, 2);
+    print_minix_inode(bd, 3);
+    print_dir_entries( get_blk(bd, 698) );
 
     bh = inode_get_blk( minix_iget(bd->sb, 2), 0x0);
-    print_block(bh);
-
+    (void)bh;
+//    print_block(bh);
+    zlp_log();
     inode = minix_iget(bd->sb, 1);
-    printf("==========%d=========\n", minix_i( inode->i_op->lookup( inode, "user_code.bin"))->d_inode.i_size);
+    zlp_log();
 
+    inode = namei( inode, "./dir1/dir2");
+    zlp_log();
+    if(inode)
+        printf("==========ino: %d=========\n", inode->i_ino);
+    else
+        printf("not found\n");
 }
 
 
