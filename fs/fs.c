@@ -146,7 +146,7 @@ struct inode* namei(struct inode *cur_dir, const char *path)
     int length ;
     char *name;
     unsigned long offset;
-    zlp_log();
+
     if(path==NULL){
         return NULL;
     }else if(*path == '/'){   //从根目录开始计算
@@ -157,29 +157,22 @@ struct inode* namei(struct inode *cur_dir, const char *path)
         dir = cur_dir;
     }
 
-    zlp_log();
     if(*path == '.' && *(path+1)=='/'){
         path+=2;
     }
-    zlp_log();
 
     name = (char*)kmalloc(strlen(path) + sizeof('\0'));
-    zlp_log();
 
     while( (length=path_len(path, &offset))!=0 ){
-    zlp_log();
         path += offset;
         memcpy(name, (void*)path, length);
         path += length;
         *(name+length) = '\0';
-    zlp_log();
         
         dir = dir->i_op->lookup(dir, name);
-    zlp_log();
         if(dir==NULL)
             break;
     }
-    zlp_log();
 
     kfree(name);
 
@@ -210,7 +203,7 @@ struct inode* get_inode(struct super_block *sb, unsigned long ino)
 
     list_for_each(pos, &sb->s_inodes){
         inode = list_entry(pos, struct inode, list);
-        if(inode->i_ino == ino)
+        if( (inode->i_ino == ino) && (inode->sb == sb) )
             return inode;
     }
 
@@ -218,11 +211,19 @@ struct inode* get_inode(struct super_block *sb, unsigned long ino)
 }
 
 
-//free内存中的inode对象并写回磁盘
-void generic_drop_inode(struct inode *inode)
+void write_inode(struct inode* inode)
 {
 
+    inode->sb->s_op->write_inode(inode);
+}
 
+
+//free内存中的inode对象并写回磁盘，inode对象的数据存放在buffer中，待写回
+void generic_drop_inode(struct inode *inode)
+{
+    write_inode(inode);
+
+    inode->sb->s_op->destroy_inode(inode);
 }
 
 

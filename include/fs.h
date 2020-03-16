@@ -88,6 +88,7 @@ struct inode{
     unsigned long i_mtime;
     unsigned long i_ctime;
     unsigned long i_state;
+    unsigned long i_nlink;
 
     unsigned long i_ino;
     struct list_head list;       //用于链接同一super_block的所有inode
@@ -100,7 +101,7 @@ struct inode{
 struct super_operations{
     struct inode *(*alloc_inode)(struct super_block *sb);
     void (*destroy_inode)(struct inode *);
-//    int (*write_inode) (struct inode *, struct writeback_control *wbc);
+    int (*write_inode) (struct inode * );
     void (*put_super) (struct super_block *);
 };
 
@@ -178,6 +179,8 @@ struct buffer_head{
 //    struct page* pg;            //该block存放于该page
 //    unsigned long page_offset;  //该block在page中的offset
 };
+
+#define mark_buffer_dirty(bh)   (bh->b_state = BH_Dirty)
 
 
 extern void init_fs(void);

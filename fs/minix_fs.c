@@ -117,7 +117,7 @@ struct inode * minix_iget(struct super_block *sb, unsigned long ino)
 
         d_inode = minix_raw_inode( sb, ino, &bh );
 
-        memcpy( &m_mi->d_inode, d_inode, sizeof(struct minix_inode) );
+        memcpy( m_mi->i_data, d_inode->i_zone, 9 * 2 );
 
         inode->i_mode = d_inode->i_mode;
         inode->i_uid = d_inode->i_uid;
@@ -138,6 +138,7 @@ struct inode * minix_iget(struct super_block *sb, unsigned long ino)
 
         inode->i_state &= ~I_NEW;
     }
+
     return inode;
 }
 
@@ -148,7 +149,7 @@ struct buffer_head* inode_get_blk(struct inode *inode, unsigned long offset)
     unsigned long blk_offset;
     unsigned long blk_no;
     unsigned long *addr;
-    struct minix_inode *d_inode = &minix_i(inode)->d_inode;
+    struct minix_inode_info *m_ii = minix_i(inode);
     struct block_device *bd = inode->sb->bd;
 
 
@@ -156,13 +157,13 @@ struct buffer_head* inode_get_blk(struct inode *inode, unsigned long offset)
     blk_offset = offset/BLOCK_SZ;
 
     if( blk_offset < 7){    //直接块
-        blk_no = d_inode->i_zone[blk_offset];
+        blk_no = m_ii->i_data[blk_offset];
     }else if( blk_offset < 7 + 512){    //一次间接块，512 = BLOCK_SZ / BLK_NO_SZ, 
-        addr = get_blk(bd, d_inode->i_zone[7])->data + BLK_NO_SZ * (blk_offset - 7);
+        addr = get_blk(bd, m_ii->i_data[7])->data + BLK_NO_SZ * (blk_offset - 7);
         blk_no = *addr;
     }else if( blk_offset < 7 + 512 + 512 * 512 ){   //二次间接块
-        addr = get_blk(bd, d_inode->i_zone[8])->data + BLK_NO_SZ * (blk_offset - 7 - 512)/512;
-        blk_no = *addr;   
+        addr = get_blk(bd, m_ii->i_data[8])->data + BLK_NO_SZ * (blk_offset - 7 - 512)/512;
+        blk_no = *addr;
     }else{  //不支持的大小
         return NULL;
     }
@@ -173,16 +174,14 @@ struct buffer_head* inode_get_blk(struct inode *inode, unsigned long offset)
 //从当前目录的inode中查找名为name的文件或路径文件
 static struct inode* minix_lookup(struct inode* dir, char *name)
 {
-    struct minix_inode *d_inode = &minix_i(dir)->d_inode;
-    unsigned long sz = d_inode->i_size;
+    unsigned long sz = dir->i_size;
     struct buffer_head *bh;
     unsigned long offset = 0;
     struct dir_entry *de;
     unsigned long i;
 
-    if(!S_ISDIR(d_inode->i_mode))  //在非目录中查找文件
+    if(!S_ISDIR(dir->i_mode))  //在非目录中查找文件
         return NULL;
-
     if( strlen(name) > NAME_LEN)
         return NULL;
 
@@ -191,10 +190,10 @@ static struct inode* minix_lookup(struct inode* dir, char *name)
         de = bh->data;
 
         for(i=0;i<DIR_PER_BLK;i++){
-            de++;
             if( strcmp(name, de->name)==0){
                 return minix_iget( dir->sb, de->inode);
             }
+            de++;
         }; 
     }
 
@@ -203,14 +202,12 @@ static struct inode* minix_lookup(struct inode* dir, char *name)
 
 
 static const struct inode_operations minix_inode_operations = {
-
     .lookup = &minix_lookup ,
 };
 
 
 static const struct inode_operations minix_dir_inode_operations = {
     .lookup = &minix_lookup ,
-
 };
 
 /*
@@ -228,6 +225,7 @@ const struct inode_operations minix_dir_inode_operations = {
 };
 */
 
+
 static struct inode *minix_alloc_inode(struct super_block *sb)
 {
     struct minix_inode_info *ei;
@@ -243,6 +241,33 @@ static void minix_destroy_inode(struct inode* inode)
         return ;
 
     kfree(minix_i(inode));
+}
+
+static int minix_write_inode(struct inode *inode)
+{
+    struct buffer_head * bh; 
+    struct minix_inode * raw_inode;
+    struct minix_inode_info *minix_inode = minix_i(inode);
+    int i;
+
+    raw_inode = minix_raw_inode(inode->sb, inode->i_ino, &bh);
+    if (!raw_inode)
+        return 0;
+    raw_inode->i_mode = inode->i_mode;
+    raw_inode->i_uid = inode->i_uid;
+    raw_inode->i_gid = inode->i_gid;
+    raw_inode->i_nlinks = inode->i_nlink;
+    raw_inode->i_size = inode->i_size;
+    raw_inode->i_time = inode->i_mtime;
+    
+    for (i = 0; i < 9; i++)
+        raw_inode->i_zone[i] = minix_inode->i_data[i];
+
+    mark_buffer_dirty(bh);
+
+    brelse(bh);
+
+    return 0;
 }
 
 
@@ -266,7 +291,7 @@ static void minix_put_super(struct super_block *sb)
 static const struct super_operations minix_sops = { 
     .alloc_inode    = minix_alloc_inode,
     .destroy_inode  = minix_destroy_inode,
-//    .write_inode    = minix_write_inode,
+    .write_inode    = minix_write_inode,
 //    .evict_inode    = minix_evict_inode,
     .put_super  = minix_put_super,
 //    .statfs     = minix_statfs,
@@ -294,16 +319,19 @@ void print_block(struct buffer_head* bh)
 
 void print_minix_inode(struct block_device *bd, unsigned long inode_no)
 {
-    struct minix_inode *d_inode;
+    struct inode *inode;
+    struct minix_inode_info *m_ii;
     int i=0;
 
-    d_inode = &(minix_i(minix_iget(bd->sb, inode_no))->d_inode);
+    inode = minix_iget(bd->sb, inode_no);
     
-    printf("i_mode: %#x\n", d_inode->i_mode);
-    printf("i_size: %d\n", d_inode->i_size);
+    printf("i_mode: %#x\n", inode->i_mode);
+    printf("i_size: %d\n", inode->i_size);
+
+    m_ii = minix_i(inode);
 
     for(i=0; i<9; i++){
-        printf("i_zone[%d]: %d\n", i, d_inode->i_zone[i]);
+        printf("i_data[%d]: %d\n", i, m_ii->i_data[i]);
     }
 }
 
@@ -356,12 +384,9 @@ void print_minix(struct block_device *bd)
     bh = inode_get_blk( minix_iget(bd->sb, 2), 0x0);
     (void)bh;
 //    print_block(bh);
-    zlp_log();
     inode = minix_iget(bd->sb, 1);
-    zlp_log();
 
-    inode = namei( inode, "./dir1/dir2");
-    zlp_log();
+    inode = namei( inode, "./dir1/dir2/user_code.bin");
     if(inode)
         printf("==========ino: %d=========\n", inode->i_ino);
     else

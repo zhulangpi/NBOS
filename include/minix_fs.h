@@ -111,7 +111,7 @@ struct minix_sb_info {
  * minix fs inode data in memory
  */
 struct minix_inode_info {
-    struct minix_inode d_inode;
+    __u16  i_data[16];
     struct inode vfs_inode;
 };
 
