@@ -45,14 +45,19 @@
 #define I_NEW           (8)
 
 
-/* 暂时不实现
+struct file;
 struct file_operations{
-}
+    unsigned long (*read) (struct file  *f, char * buffer, unsigned long size, unsigned long pos);
+};
 
 struct file{
+    struct inode *f_inode;
+    unsigned long f_count;
+    int f_flags;
     struct file_operations* f_op;
+    unsigned long f_pos;
 };
-*/
+
 
 // file->inode->block_device->super_block
 // 对任意inode的字节的读写都会转换为对内存中一个block的读写，
@@ -76,7 +81,7 @@ struct inode;
 
 struct inode_operations {
     struct inode* (*lookup)(struct inode *dir, char *name);  //根据当前目录inode和路径文件名搜索inode
-
+    int (*read)(struct inode* inode, char* buf, int pos , int count);
 };
 
 struct inode{
@@ -190,5 +195,8 @@ extern struct buffer_head* bread( struct block_device *bd, unsigned long blk_no)
 extern int brelse(struct buffer_head * bh);
 extern struct inode* namei(struct inode *cur_dir, const char *path);
 extern struct inode* get_inode(struct super_block *sb, unsigned long ino);
+
+extern int file_read(struct file * filp, char * buf, int count);
+extern int file_open(const char * filename, int flag, int mode);
 
 #endif

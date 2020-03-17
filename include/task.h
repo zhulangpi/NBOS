@@ -3,6 +3,7 @@
 
 #include "type.h"
 #include "list.h"
+#include "fs.h"
 
 #define STACK_SZ        (4<<10)
 #define USER_STACK_SZ   (STACK_SZ)
@@ -55,6 +56,8 @@ struct pt_regs{
 };
 
 
+#define NR_OPEN             (32)
+#define NR_FILE             (64)
 #define CANARY_MAGIC_NUM    (0xdeadbeef)
 
 /* 任务描述符 */
@@ -65,7 +68,9 @@ struct task_struct{
     int state;
     unsigned long preempt_count;
     struct mm_struct *mm;
-    struct list_head list;
+    struct list_head list;          //任务链表
+
+    struct file *filp[NR_OPEN]; //
     unsigned int canary;            //任务描述符位于栈顶，如果该值被修改，则栈溢出
 };
 

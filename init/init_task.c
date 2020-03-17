@@ -32,6 +32,11 @@ void idle_main(void)
 //kernel C entry
 void init_main()
 {
+    int fd = -1;
+    char buf[100];
+    int i = 0;
+    int ret = 0;
+
     disable_irq();
     init_init_task();
     init_mm();
@@ -39,6 +44,14 @@ void init_main()
     init_timer();
 
     init_fs();
+
+    fd = sys_open("/user_code.bin", 0, 0);
+    ret = sys_read(fd, buf, 100);
+    printf("fd: %d,  ret:%d\n",fd, ret);
+    for(i=0;i<100;i++)
+        printf("%#x ", buf[i]);
+
+    while(1);
     print_root_bdev();
     
     while(1);

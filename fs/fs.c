@@ -4,7 +4,7 @@
 #include "printf.h"
 #include "board.h"
 #include "list.h"
-
+#include "task.h"
 
 //系统的根设备，根设备的根路径对应系统的"/"
 struct block_device *root_bdev = NULL;
@@ -31,7 +31,6 @@ static struct gendisk pflash = {
 };
 
 
-
 void init_fs(void)
 {
     root_bdev = (struct block_device *)kmalloc(sizeof(struct block_device));
@@ -42,7 +41,6 @@ void init_fs(void)
     minix_fill_super(root_bdev->sb);
 
     root_inode = minix_iget(root_bdev->sb, MINIX_ROOT_INO);
-
 
 }
 
@@ -104,8 +102,9 @@ struct buffer_head* get_blk(struct block_device *bd, unsigned long blk_no)
 //先同步磁盘，再分配释放block和buffer head
 int brelse(struct buffer_head * bh)
 {
-    if(bh->b_state == BH_Dirty)
+    if(bh->b_state == BH_Dirty){
         bh->bd->genhd->blkdev_op->write( bh->blk_no, bh ); 
+    }
 
     kfree(bh->data);
     list_del(&bh->lru);
@@ -113,7 +112,6 @@ int brelse(struct buffer_head * bh)
 
     return 0;
 }
-
 
 
 // path = "///asd.c/sad"
@@ -213,7 +211,6 @@ struct inode* get_inode(struct super_block *sb, unsigned long ino)
 
 void write_inode(struct inode* inode)
 {
-
     inode->sb->s_op->write_inode(inode);
 }
 
@@ -224,6 +221,66 @@ void generic_drop_inode(struct inode *inode)
     write_inode(inode);
 
     inode->sb->s_op->destroy_inode(inode);
+}
+
+
+struct file file_tbl[NR_FILE];
+
+
+int file_open(const char * filename, int flag, int mode)
+{
+    struct inode * inode;
+    struct file * f;
+    int i,fd;
+
+    (void)mode;
+
+    for(fd=0 ; fd<NR_OPEN ; fd++)
+        if (!current->filp[fd])
+            break;
+    if (fd>=NR_OPEN)
+        return -1;
+
+    f = file_tbl;
+    for (i=0 ; i<NR_FILE ; i++,f++)
+        if (!f->f_count) break;
+    if (i>=NR_FILE)
+        return -2;
+
+    current->filp[fd]=f;
+    
+    inode = namei( NULL, filename);
+    if(inode==NULL) {
+        current->filp[fd]=NULL;
+        f->f_count=0;
+        return -3;
+    } 
+
+//    f->f_mode = inode->i_mode;
+    f->f_flags = flag;
+    f->f_count = 1;
+    f->f_inode = inode;
+    f->f_pos = 0;
+    
+    return (fd);
+}
+
+
+int file_read(struct file * filp, char * buf, int count)
+{
+    int ret;
+    struct inode *inode;
+
+    if (count<=0)
+        return 0;
+
+    inode = filp->f_inode;
+
+    ret = inode->i_op->read(inode, buf, filp->f_pos, count);
+    if(ret>0)
+        filp->f_pos+=ret;
+
+    return ret?ret:-1;
 }
 
 

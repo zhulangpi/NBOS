@@ -53,13 +53,16 @@ $(IMAGE): $(OBJS)
 	$(CC) $(CFLAGS) $< -c -o $@
 
 
+
+loop_dev = /dev/loop23
+
 $(FILE_SYSTEM):
 	make all -C rootfs
 	mkdir tmp
 	dd if=/dev/zero of=$(FILE_SYSTEM) bs=1024 count=65536
-	sudo losetup /dev/loop22 $(FILE_SYSTEM)
-	sudo mkfs.minix -1 /dev/loop22
-	sudo losetup -d /dev/loop22
+	sudo losetup $(loop_dev) $(FILE_SYSTEM)
+	sudo mkfs.minix -1 $(loop_dev)
+	sudo losetup -d $(loop_dev)
 	sudo mount -o loop,rw $(FILE_SYSTEM) ./tmp
 	sudo cp rootfs/process1/user_code.bin tmp
 #	sudo cp rootfs/process2/user_code.bin tmp
@@ -82,6 +85,7 @@ line:
 
 distclean:
 	rm -f $(IMAGE) $(FILE_SYSTEM) $(OBJS) *.list *.sym *.bin qemu.log arch/virt.dts
+	rm -rf tmp
 	make clean -C rootfs
 
 clean:

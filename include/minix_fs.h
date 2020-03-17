@@ -134,5 +134,5 @@ static inline struct minix_inode_info *minix_i(struct inode *inode)
 extern int minix_fill_super(struct super_block *);
 extern struct inode* minix_iget(struct super_block *sb, unsigned long ino);
 extern void print_minix(struct block_device *bd);
-
+extern struct buffer_head* inode_get_blk(struct inode *inode, unsigned long offset);
 #endif

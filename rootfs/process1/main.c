@@ -8,6 +8,9 @@ void main(void)
     while(1){
         call_sys_write("user process1!\n");
         delay();
+        
+
+
 /*
         if(i==0){
             call_sys_fork();

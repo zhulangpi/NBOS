@@ -201,8 +201,36 @@ static struct inode* minix_lookup(struct inode* dir, char *name)
 }
 
 
+static int minix_read(struct inode* inode, char* buf, int pos , int count)
+{
+    int left,chars,nr;
+    char *p; 
+    struct buffer_head * bh; 
+
+    left = count;
+    while (left) {
+        bh = inode_get_blk(inode, pos);
+        if(bh == NULL)
+            return -1; 
+        nr = pos % BLOCK_SZ;
+        chars = min( BLOCK_SZ-nr , left);
+        pos += chars;
+        left -= chars;
+
+        p = nr + bh->data;
+        while (chars-->0){
+            *buf = *p;
+            buf++;
+            p++;
+        }
+        brelse(bh);
+    }
+    //inode->i_atime = CURRENT_TIME;
+    return (count-left)?(count-left):-1;
+}
+
 static const struct inode_operations minix_inode_operations = {
-    .lookup = &minix_lookup ,
+    .read = &minix_read,
 };
 
 
@@ -381,9 +409,9 @@ void print_minix(struct block_device *bd)
     print_minix_inode(bd, 3);
     print_dir_entries( get_blk(bd, 698) );
 
-    bh = inode_get_blk( minix_iget(bd->sb, 2), 0x0);
+   // bh = inode_get_blk( minix_iget(bd->sb ,1) , 0 );
     (void)bh;
-//    print_block(bh);
+   // print_block(bh);
     inode = minix_iget(bd->sb, 1);
 
     inode = namei( inode, "./dir1/dir2/user_code.bin");

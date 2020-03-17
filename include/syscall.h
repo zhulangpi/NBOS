@@ -2,11 +2,15 @@
 #define _SYSCALL_H_
 
 
-#define     SYS_WRITE   0
-#define     SYS_FORK    1
-#define     SYS_MALLOC  2
-#define     SYS_EXIT    3
-#define     SYSCALL_NR  4
+
+#define    SYS_WRITE  0
+#define    SYS_FORK   1
+#define    SYS_MALLOC 2
+#define    SYS_EXIT   3
+#define    SYS_OPEN   4
+#define    SYS_READ   5
+#define    SYSCALL_NR 6
+
 
 #ifndef _ASSEMBLY_
 
@@ -15,6 +19,8 @@ extern int sys_write(char *s);
 extern int sys_fork(void);
 extern int sys_malloc(void);
 extern int sys_exit(void);
+extern int sys_open(const char * filename, int flag, int mode);
+extern int sys_read(int fd, char * buf, int count);
 
 #endif
 
