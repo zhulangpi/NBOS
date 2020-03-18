@@ -16,7 +16,7 @@ OBJDUMP = $(CROSS_COMPILE)objdump
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
 
-INC := $(ROOT)/include
+INC := $(ROOT)/include -I$(ROOT)/include/fs
 
 
 CFLAGS = -Wall -fpic -fno-common -O0 \
@@ -129,7 +129,7 @@ qemu_cmd_args = \
 
 #-drive if=pflash,format=raw,file=$(FILE_SYSTEM),unit=1 \
 #填充第二块pflash，第一块flash如果非空会被用作boot ROM，每块pflash大小为64MB
-
+#默认使用的是hw/block/pflash_cfi01.c的设备实例
 
 run: $(IMAGE) $(FILE_SYSTEM)
 	$(qemu) $(qemu_cmd_args)

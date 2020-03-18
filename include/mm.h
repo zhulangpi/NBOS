@@ -48,7 +48,7 @@
 
 #define PG_free                 (0)         //空闲
 #define PG_kmalloc              (1)         //该页被用于kmalloc
-#define PG_buffer_head          (2)         //该页被用作buffer_head管理的cache或buffer
+//#define PG_buffer_head          (2)         //该页被用作buffer_head管理的cache或buffer
 
 #ifndef _ASSEMBLY_
 struct page {

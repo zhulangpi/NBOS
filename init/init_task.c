@@ -51,7 +51,6 @@ void init_main()
     for(i=0;i<100;i++)
         printf("%#x ", buf[i]);
 
-    while(1);
     print_root_bdev();
     
     while(1);

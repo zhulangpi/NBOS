@@ -52,10 +52,28 @@ static int pflash_read(sector_t sect, struct buffer_head *bh)
 }
 
 
+#define pflash1_addr(m)     (unsigned char*)(PFLASH1_BASE + m)
+#define CMD_WR              (0x10)
+#define CMD_WR_END          (0xff)
+#define CMD_STATE_REG       (0x70)
+#define SR_7                (0x80)
+
+static inline void pflash_write_byte(unsigned long addr, unsigned char val)
+{
+    *pflash1_addr(addr) = CMD_WR;
+    *pflash1_addr(addr) = val;
+}
+
 static int pflash_write(sector_t sect, struct buffer_head *bh)
 {
-    memcpy( (void*)(PFLASH1_BASE + sect * BLOCK_SZ), bh->data, BLOCK_SZ);
-    return 0;
+    int i = 0;
+    unsigned long base = sect*BLOCK_SZ;
+    for(i=0; i<BLOCK_SZ; i++){
+        pflash_write_byte( base + i , *(unsigned char*)(bh->data + i) );
+    }
+    while(!(*pflash1_addr(CMD_STATE_REG) & SR_7));      //wait for write complete
+    *pflash1_addr(0) = CMD_WR_END;                      //any addr is ok, enter read mode
+    return i;
 }
 
 

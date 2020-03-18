@@ -223,6 +223,7 @@ static int minix_read(struct inode* inode, char* buf, int pos , int count)
             buf++;
             p++;
         }
+        mark_buffer_dirty(bh);
         brelse(bh);
     }
     //inode->i_atime = CURRENT_TIME;

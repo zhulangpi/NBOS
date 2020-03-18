@@ -11,7 +11,7 @@ const void* img_end = &__img_end;
 
 void init_mm(void)
 {
-	map_kernel_sections( PFLASH1_PA_BASE, PFLASH1_BASE, PFLASH1_SIZE,  MMU_FLAGS );
+	map_kernel_sections( PFLASH1_PA_BASE, PFLASH1_BASE, PFLASH1_SIZE,  MMU_DEVICE_FLAGS );
 
     if(__pa(img_end) > HIGH_MEM){
         printf("image is too large\n");
