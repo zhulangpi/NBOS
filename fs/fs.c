@@ -301,6 +301,7 @@ int file_open(const char * filename, int flag, int mode)
     return (fd);
 }
 
+
 int file_close(int fd)
 {
     struct file *filp;
@@ -320,6 +321,7 @@ int file_close(int fd)
 
     return 0;
 }
+
 
 int file_read(struct file * filp, char * buf, int count)
 {
@@ -356,6 +358,7 @@ int file_write(struct file *filp, char *buf, int count)
     return ret?ret:-1;
 
 }
+
 
 int file_lseek(struct file *filp, int offset, int whence)
 {

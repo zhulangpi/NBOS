@@ -101,7 +101,8 @@ static void task_add(struct task_struct *new)
 
 
 //just put new task in queue
-void copy_process(unsigned long flags, unsigned long start, unsigned long size)
+//创建新的任务，代码存放在虚拟地址[start, start+size]之间
+void copy_process(unsigned long start, unsigned long size)
 {
     struct task_struct* p = NULL;
     struct pt_regs* new = NULL; 
@@ -118,7 +119,7 @@ void copy_process(unsigned long flags, unsigned long start, unsigned long size)
     p->cpu_context.sp = (unsigned long)new;    //保留异常返回的空间
     p->preempt_count = 0;
 
-    //分配用户态地址空间
+    //分配用户态地址空间，最低一段为代码，最高一段为栈空间
     p->mm = (struct mm_struct*)kmalloc(sizeof(struct mm_struct));
     p->mm->pgd = __pa(get_free_page(GFP_KERNEL) );
     p->cpu_context.x20 = p->mm->pgd;
@@ -132,7 +133,7 @@ void copy_process(unsigned long flags, unsigned long start, unsigned long size)
     switch_mm(p->mm);
     memcpy( USER_START, (void*)start, size );
     switch_mm(current->mm);
-    new->spsr = PSR_MODE_EL0t;      //使得eret能够返回到el0
+    new->spsr = PSR_MODE_EL0t;                  //使得eret能够返回到el0
 
     p->canary = CANARY_MAGIC_NUM;
     task_add(p);
@@ -141,6 +142,19 @@ void copy_process(unsigned long flags, unsigned long start, unsigned long size)
     //print_process_page(p->mm);
 }
 
+
+void execv(struct file *filp)
+{
+    void *buf;
+    unsigned long size;
+
+    size  = filp->f_inode->i_size;
+    buf = kmalloc(size);
+    file_read(filp, buf, size);
+
+    copy_process((unsigned long)buf, size);
+    kfree(buf);
+}
 
 //just put new task in queue
 void kthread_create(void (*main)(void))

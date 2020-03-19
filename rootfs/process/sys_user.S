@@ -7,6 +7,7 @@
 .set SYS_WRITE,     6
 .set SYS_CLOSE,     7
 .set SYS_LSEEK,     8
+.set SYS_EXECV,     9
 
 
     .globl  call_sys_put
@@ -64,4 +65,8 @@ call_sys_lseek:
     svc #0
     ret
 
-
+    .globl  call_sys_execv
+call_sys_execv:
+    mov x8, #SYS_EXECV
+    svc #0
+    ret

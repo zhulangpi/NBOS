@@ -6,7 +6,7 @@
 #include "fs.h"
 #include "lib.h"
 
-void* syscall_table[SYSCALL_NR] = { sys_put, sys_fork, sys_malloc, sys_exit, sys_open, sys_read, sys_write, sys_lseek};
+void* syscall_table[SYSCALL_NR] = { sys_put, sys_fork, sys_malloc, sys_exit, sys_open, sys_read, sys_write, sys_lseek, sys_execv };
 
 int sys_put(char *buf)
 {
@@ -15,7 +15,6 @@ int sys_put(char *buf)
 
 int sys_fork(void)
 {
-    copy_process(USER_PROCESS, PFLASH1_BASE, 16<<10);
     return 0;
 }
 
@@ -74,4 +73,17 @@ int sys_lseek(int fd, int offset, int whence)
     return file_lseek(filp, offset, whence);
 }
 
+int sys_execv(char* file_path)
+{
+    int fd;
+    struct file *filp;
+    if(file_path==NULL)
+        return -1;
+
+    fd = file_open(file_path, 0 , 0);
+    filp = current->filp[fd];
+    execv(filp);
+    file_close(fd);
+    return 0;
+}
 

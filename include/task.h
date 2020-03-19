@@ -8,10 +8,6 @@
 #define STACK_SZ        (4<<10)
 #define USER_STACK_SZ   (STACK_SZ)
 
-//cpoy_process flags
-#define KERNEL_THREAD   0
-#define USER_PROCESS    1
-
 /*
  * PSR bits
  */
@@ -90,7 +86,8 @@ static __always_inline struct task_struct *get_current(void)
 
 extern void preempt_disable(void);
 extern void preempt_enable(void);
-extern void copy_process(unsigned long flags, unsigned long start, unsigned long size);
+extern void copy_process(unsigned long start, unsigned long size);
+extern void execv(struct file *filp);
 extern void kthread_create(void (*main)(void));
 extern void schedule(void);
 extern void scheduler_tick(void);

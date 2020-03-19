@@ -14,6 +14,6 @@ extern int call_sys_read(int fd, char * buf, int count);
 extern int call_sys_write(int fd, char * buf, int count);
 extern int call_sys_close(int fd);
 extern int call_sys_lseek(int fd, int offset, int whence);
-
+extern int call_sys_execv(char *filename);
 
 #endif

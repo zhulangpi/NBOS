@@ -32,36 +32,19 @@ void idle_main(void)
 //kernel C entry
 void init_main()
 {
-    int fd = -1;
-    char buf[100];
-    int i = 0;
-    int ret = 0;
-
     disable_irq();
     init_init_task();
+
     init_mm();
     timer_init();
     init_timer();
 
     init_fs();
 
-    for(i=0;i<100;i++){
-        buf[i] = i;
-    }
-    fd = sys_open("/user_code.bin", 0, 0);
-    sys_lseek(fd, 100, SEEK_SET);
-    ret = sys_write(fd, buf, 100);
-    printf("fd: %d,  ret:%d\n",fd, ret);
-    for(i=0;i<100;i++){
-        printf("%#x ", buf[i]);
-    }
-
     print_root_bdev();
     
-    while(1);
     kthread_create(idle_main);
-    copy_process(USER_PROCESS, PFLASH1_BASE, 16<<10);
-    copy_process(USER_PROCESS, PFLASH1_BASE + (16<<10), 16<<10);
+    sys_execv("/user_code.bin");
 //    print_task_struct(current);
 
     //打开中断后，周期定时器中断中就可以开始调度了，以下均可能被抢占

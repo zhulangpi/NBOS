@@ -27,6 +27,7 @@ extern int sys_read(int fd, char * buf, int count);
 extern int sys_write(int fd, char * buf, int count);
 extern int sys_close(int fd);
 extern int sys_lseek(int fd, int offset, int whence);
+extern int sys_execv(char* filename);
 #endif
 
 
