@@ -42,19 +42,16 @@
 #define S_IXOTH 00001
 
 
-#define I_NEW           (8)
+#define I_NEW       (8)
 
-
-struct file;
-struct file_operations{
-    unsigned long (*read) (struct file  *f, char * buffer, unsigned long size, unsigned long pos);
-};
+#define SEEK_SET    (0)
+#define SEEK_CUR    (1)
+#define SEEK_END    (2)
 
 struct file{
     struct inode *f_inode;
     unsigned long f_count;
     int f_flags;
-    struct file_operations* f_op;
     unsigned long f_pos;
 };
 
@@ -82,6 +79,7 @@ struct inode;
 struct inode_operations {
     struct inode* (*lookup)(struct inode *dir, char *name);  //根据当前目录inode和路径文件名搜索inode
     int (*read)(struct inode* inode, char* buf, int pos , int count);
+    int (*write)(struct inode* inode, char* buf, int pos , int count);
 };
 
 struct inode{
@@ -99,6 +97,7 @@ struct inode{
     struct list_head list;       //用于链接同一super_block的所有inode
     const struct inode_operations *i_op;
     struct super_block *sb;
+    unsigned long i_count;
 //    void *i_private;            //fs or device private pointer ,指向具体文件系统的inode
 };
 
@@ -133,7 +132,6 @@ struct gendisk{
     struct blkdev_operations *blkdev_op;    //块设备的读写操作集
 //    struct request_queue *queue;
     char diskname[30];
-    
 };
 
 
@@ -148,26 +146,6 @@ struct block_device{
 enum bh_state_bits {
     BH_Uptodate,    /* Contains valid data */
     BH_Dirty,   /* Is dirty */
-    BH_Lock,    /* Is locked */
-    BH_Req,     /* Has been submitted for I/O */
-    BH_Uptodate_Lock,/* Used by the first bh in a page, to serialise
-              * IO completion of other buffers in the page
-              */
-
-    BH_Mapped,  /* Has a disk mapping */
-    BH_New,     /* Disk mapping was newly created by get_block */
-    BH_Async_Read,  /* Is under end_buffer_async_read I/O */
-    BH_Async_Write, /* Is under end_buffer_async_write I/O */
-    BH_Delay,   /* Buffer is not yet allocated on disk */
-    BH_Boundary,    /* Block is followed by a discontiguity */
-    BH_Write_EIO,   /* I/O error on write */
-    BH_Ordered, /* ordered write */
-    BH_Eopnotsupp,  /* operation not supported (barrier) */
-    BH_Unwritten,   /* Buffer is allocated on disk but not written */
-
-    BH_PrivateStart,/* not a state bit, but the first bit available
-             * for private allocation by other entities
-             */
 };
 
 
@@ -195,7 +173,9 @@ extern int brelse(struct buffer_head * bh);
 extern struct inode* namei(struct inode *cur_dir, const char *path);
 extern struct inode* get_inode(struct super_block *sb, unsigned long ino);
 
-extern int file_read(struct file * filp, char * buf, int count);
 extern int file_open(const char * filename, int flag, int mode);
-
+extern int file_read(struct file * filp, char * buf, int count);
+extern int file_write(struct file * filp, char * buf, int count);
+extern int file_close(int fd);
+extern int file_lseek(struct file *filp, int offset, int whence);
 #endif

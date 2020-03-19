@@ -45,11 +45,16 @@ void init_main()
 
     init_fs();
 
+    for(i=0;i<100;i++){
+        buf[i] = i;
+    }
     fd = sys_open("/user_code.bin", 0, 0);
-    ret = sys_read(fd, buf, 100);
+    sys_lseek(fd, 100, SEEK_SET);
+    ret = sys_write(fd, buf, 100);
     printf("fd: %d,  ret:%d\n",fd, ret);
-    for(i=0;i<100;i++)
+    for(i=0;i<100;i++){
         printf("%#x ", buf[i]);
+    }
 
     print_root_bdev();
     

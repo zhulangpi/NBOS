@@ -5,12 +5,10 @@
 ################################################
 
 all:
-	make all -C process1
-	make all -C process2
+	make all -C process
 
 clean:
-	make clean -C process1
-	make clean -C process2
+	make clean -C process
 
 .PHONY: all clean
 

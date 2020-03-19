@@ -206,6 +206,7 @@ static struct inode* get_new_inode(struct super_block *sb, unsigned long ino)
     inode->i_ino = ino;
     inode->i_op = NULL;
     inode->i_state = I_NEW;
+    inode->i_count = 1;
     list_add(&inode->list, &sb->s_inodes);
 
     return inode;
@@ -219,8 +220,10 @@ struct inode* get_inode(struct super_block *sb, unsigned long ino)
 
     list_for_each(pos, &sb->s_inodes){
         inode = list_entry(pos, struct inode, list);
-        if( (inode->i_ino == ino) && (inode->sb == sb) )
+        if( (inode->i_ino == ino) && (inode->sb == sb) ){
+            inode->i_count++;
             return inode;
+        }
     }
 
     return get_new_inode(sb, ino);
@@ -237,8 +240,23 @@ void write_inode(struct inode* inode)
 void generic_drop_inode(struct inode *inode)
 {
     write_inode(inode);
-
     inode->sb->s_op->destroy_inode(inode);
+}
+
+
+int put_inode(struct inode * inode)
+{
+    if(inode->i_count==0){
+        printf("error, put a inode with i_count==0!\n");
+        return -1;
+    }
+
+    inode->i_count--;
+    if(inode->i_count==0){
+        generic_drop_inode(inode);
+    }
+
+    return 0;
 }
 
 
@@ -283,6 +301,25 @@ int file_open(const char * filename, int flag, int mode)
     return (fd);
 }
 
+int file_close(int fd)
+{
+    struct file *filp;
+
+    if(fd>=NR_OPEN || fd<0)
+        return -1;
+
+    filp = current->filp[fd];
+    current->filp[fd] = NULL;
+
+    if(filp->f_count==0)
+        printf("error, close file whose f_count is 0!\n");
+    else
+        filp->f_count--;
+    
+    put_inode(filp->f_inode);
+
+    return 0;
+}
 
 int file_read(struct file * filp, char * buf, int count)
 {
@@ -299,6 +336,51 @@ int file_read(struct file * filp, char * buf, int count)
         filp->f_pos+=ret;
 
     return ret?ret:-1;
+}
+
+
+int file_write(struct file *filp, char *buf, int count)
+{
+    int ret;
+    struct inode *inode;
+
+    if (count<=0)
+        return 0;
+
+    inode = filp->f_inode;
+
+    ret = inode->i_op->write(inode, buf, filp->f_pos, count);
+    if(ret>0)
+        filp->f_pos+=ret;
+
+    return ret?ret:-1;
+
+}
+
+int file_lseek(struct file *filp, int offset, int whence)
+{
+    int pos = (int)filp->f_pos;
+
+    switch(whence){
+        case SEEK_SET:
+            pos = offset;
+            break;
+        case SEEK_CUR:
+            pos += offset;
+            break;
+        case SEEK_END:
+            pos = filp->f_inode->i_size;
+            pos += offset;
+            break;
+        default:
+            break;
+    }
+
+    if( (pos<0) || (pos>filp->f_inode->i_size) )
+        return -1;
+
+    filp->f_pos = (unsigned long)pos;
+    return pos;
 }
 
 

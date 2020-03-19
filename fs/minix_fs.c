@@ -201,7 +201,7 @@ static struct inode* minix_lookup(struct inode* dir, char *name)
 }
 
 
-static int minix_read(struct inode* inode, char* buf, int pos , int count)
+static int minix_read(struct inode *inode, char *buf, int pos , int count)
 {
     int left,chars,nr;
     char *p; 
@@ -223,6 +223,34 @@ static int minix_read(struct inode* inode, char* buf, int pos , int count)
             buf++;
             p++;
         }
+        brelse(bh);
+    }
+    //inode->i_atime = CURRENT_TIME;
+    return (count-left)?(count-left):-1;
+}
+
+static int minix_write(struct inode *inode, char *buf, int pos, int count)
+{
+    int left,chars,nr;
+    char *p; 
+    struct buffer_head * bh; 
+
+    left = count;
+    while (left) {
+        bh = inode_get_blk(inode, pos);
+        if(bh == NULL)
+            return -1; 
+        nr = pos % BLOCK_SZ;
+        chars = min( BLOCK_SZ-nr , left);
+        pos += chars;
+        left -= chars;
+
+        p = nr + bh->data;
+        while (chars-->0){
+            *p = *buf;
+            buf++;
+            p++;
+        }
         mark_buffer_dirty(bh);
         brelse(bh);
     }
@@ -230,13 +258,15 @@ static int minix_read(struct inode* inode, char* buf, int pos , int count)
     return (count-left)?(count-left):-1;
 }
 
+
 static const struct inode_operations minix_inode_operations = {
     .read = &minix_read,
+    .write = &minix_write,
 };
 
 
 static const struct inode_operations minix_dir_inode_operations = {
-    .lookup = &minix_lookup ,
+    .lookup = &minix_lookup,
 };
 
 /*

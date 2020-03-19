@@ -53,7 +53,6 @@ $(IMAGE): $(OBJS)
 	$(CC) $(CFLAGS) $< -c -o $@
 
 
-
 loop_dev = /dev/loop23
 
 $(FILE_SYSTEM):
@@ -64,12 +63,9 @@ $(FILE_SYSTEM):
 	sudo mkfs.minix -1 $(loop_dev)
 	sudo losetup -d $(loop_dev)
 	sudo mount -o loop,rw $(FILE_SYSTEM) ./tmp
-	sudo cp rootfs/process1/user_code.bin tmp
-#	sudo cp rootfs/process2/user_code.bin tmp
+	sudo cp rootfs/process/user_code.bin tmp
 	sudo umount tmp
 	rm -rf tmp
-#	dd if=rootfs/process1/user_code.bin of=flash1.img bs=4096 count=16384 conv=notrunc
-#	dd if=rootfs/process2/user_code.bin of=flash1.img bs=4096 count=16384 seek=4 conv=notrunc
 
 
 mount:

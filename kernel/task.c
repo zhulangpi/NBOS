@@ -67,7 +67,6 @@ static void select_next_task(void)
 //周期调度器，选择下一个任务并抢占当前任务
 void scheduler_tick(void)
 {
-
     if(current->preempt_count>0){
        return;
     }
@@ -79,6 +78,7 @@ void scheduler_tick(void)
     switch_to(next);    //这里开中断，为了切换为任务B后能正常运行，正常接受中断，下次再调度到A时，回到中断，需要恢复关中断
     disable_irq();
 }
+
 
 //主调度器，主动发起调度和切换
 void schedule()
@@ -139,7 +139,6 @@ void copy_process(unsigned long flags, unsigned long start, unsigned long size)
     preempt_enable();
 
     //print_process_page(p->mm);
-
 }
 
 
@@ -160,6 +159,7 @@ void kthread_create(void (*main)(void))
     task_add(p);
     preempt_enable();
 }
+
 
 //删除进程
 void delete_process(struct task_struct* p)
@@ -194,6 +194,7 @@ void delete_process(struct task_struct* p)
     free_page(p);
 }
 
+
 void clear_zombie(void)
 {
     struct list_head *pos;
@@ -220,6 +221,7 @@ int task_nums(void)
     return count + 1;   // +1 for init task
 }
 
+
 void print_task_struct(struct task_struct *p)
 {
     struct cpu_context c = p->cpu_context;
@@ -244,6 +246,7 @@ void print_task_queue(void)
     }
 }
 
+
 void dump_stack(struct task_struct *p)
 {
     unsigned int i=0;
@@ -256,4 +259,5 @@ void dump_stack(struct task_struct *p)
         printf("%#p: %#x\t\n", tmp, *tmp);tmp++;
     }
 }
+
 
